@@ -1,0 +1,31 @@
+# Python
+*.pyc
+__pycache__/
+venv/
+*.pyo
+*.egg-info/
+dist/
+build/
+*.log
+
+# C++
+*.o
+*.obj
+*.exe
+*.dll
+*.a
+*.lib
+*.so
+*.dylib
+*.pdb
+*.ilk
+*.exp
+
+# OS and IDE files
+.DS_Store
+thumbs.db
+*.suo
+*.user
+*.sln
+*.vcxproj
+*.vscode/
