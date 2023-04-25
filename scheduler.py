@@ -43,8 +43,10 @@ class Scheduler:
             threading.Thread(target=self.__DrugTracerMain, args=("C"))
         )
 
+        self.running = True
         for thread in self.__threads:
             thread.start()
+        # 等待线程结束
 
     def GetNextTarget(self):
         """获取下个目标
@@ -69,18 +71,18 @@ class Scheduler:
                         >= 1
                     ):
                         self.nextTarget = self.queue.pop(index)
-                        break
-                # 如果需求的药物现在都没有
+                        return self.nextTarget
+                # 循环正常结束，表明需求的药物现在都没有，应返回无目标
                 return self.__noTarget
                 # self.nextTarget = self.queue.pop()
             else:
                 # 小哥没有取药需求
                 return self.__noTarget
 
-        return {
-            "requestType": self.nextTarget["requestType"],
-            "deliverDestination": self.nextTarget["deliverDestination"],
-        }
+        # return {
+        #     "requestType": self.nextTarget["requestType"],
+        #     "deliverDestination": self.nextTarget["deliverDestination"],
+        # }
 
     def Delivered(self):
         """
@@ -94,7 +96,7 @@ class Scheduler:
 
     def GetNewRequest(self, requestType, deliverDestination):
         """
-        当获得新的快递小哥需求时，调用此函数
+        当获得新的快递小哥需求时，调用此函数。
         """
         requestDetail = {
             "priority": self.classWeights[requestType],
@@ -116,17 +118,17 @@ class Scheduler:
         周期性运行，更新队伍中优先级
         """
         # TODO: 实现根据时间调整优先级
-        self.queue.sort(key=lambda x: x["priority"])
+        self.queue.sort(key=lambda x: x["priority"], reverse=True)
 
     def DrugLoaded(self):
-        """当小车拾取药物，调用该函数。"""
+        """当小车拾取药物，调用该函数。该函数会将nextTarget对应的剩余药物量-1"""
         self.__UpdateRemainDrugWithLock(
-            self.nextTarget["drugType"], -1, self.drugRemainLock
+            self.nextTarget["requestType"], -1, self.drugRemainLock
         )
 
     def __DrugTracerMain(self, drugType):
         """周期性唤醒，使得某种药物的存量+1"""
-        while True:
+        while self.running:
             time.sleep(self.drugSupplementInterval[drugType])
             self.__UpdateRemainDrugWithLock(drugType, 1, self.drugRemainLock)
             print(
@@ -141,3 +143,6 @@ class Scheduler:
     def __GetRemainDrugWithLock(self, drugType, lock):
         with self.drugRemainLock:
             return self.drugRemain[drugType]
+
+    def Terminate(self):
+        self.running = False
