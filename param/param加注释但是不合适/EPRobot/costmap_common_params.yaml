@@ -1,0 +1,17 @@
+# 这个文件不需要改
+footprint: [ [-0.14,-0.11], [0.14,-0.11], [0.14,0.11], [-0.14,0.11] ] #车辆尺寸，按照米为单位
+# x方向是机器人正直前进方向
+# map_type: costmap #世界的2D表示,删除来消除警告
+
+obstacle_layer: #障碍物层
+ enabled: true # 启用障碍物层
+ obstacle_range: 6.5 #设置机器人检测障碍物的最大范围
+ raytrace_range: 6.0 #用来设置机器人检测自由空间的最大范围
+ track_unknown_space: false #代价值就只分为致命碰撞和自由区域两种
+ combination_method: 1
+ observation_sources: laser_scan_sensor #数据源
+ laser_scan_sensor: {data_type: LaserScan, topic: scan, marking: true, clearing: true}
+
+static_layer:  # 静态地图层
+  enabled:              true
+  map_topic:            "/map"

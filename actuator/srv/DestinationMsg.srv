@@ -1,0 +1,9 @@
+int8 car_no
+int8 request_type
+# 0: 请求下一个目标
+# 1: 到达取药区，并取得药物
+# 2: 到达送药区，并交付药物
+---
+int8 drug_location #ABC
+int8 deliver_destination #1234
+# 对于request_type=1 or 2,两个字段的值为-1
