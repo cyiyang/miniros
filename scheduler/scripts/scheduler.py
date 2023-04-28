@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 import time
 import threading
+from enum import Enum, unique
 
 
 class Scheduler:
@@ -131,9 +133,10 @@ class Scheduler:
         while self.running:
             time.sleep(self.drugSupplementInterval[drugType])
             self.__UpdateRemainDrugWithLock(drugType, 1, self.drugRemainLock)
-            print(
-                f"{drugType} updated! Remaining {drugType} for {self.__GetRemainDrugWithLock(drugType,self.drugRemainLock)}"
-            )
+            # self.__GetRemainDrugWithLock(drugType,self.drugRemainLock)
+            # print(
+            #     f"{drugType} updated! Remaining {drugType} for {self.__GetRemainDrugWithLock(drugType,self.drugRemainLock)}"
+            # )
 
     def __UpdateRemainDrugWithLock(self, drugType, addend, lock):
         """带有锁机制的药物更新。更新后drugType类型药物的数量为原数量+addend."""
@@ -146,3 +149,11 @@ class Scheduler:
 
     def Terminate(self):
         self.running = False
+
+
+@unique
+class RequestType(Enum):
+    GetNewRequest = 0
+    GetNextTarget = 1
+    DrugLoaded = 2
+    Delivered = 3

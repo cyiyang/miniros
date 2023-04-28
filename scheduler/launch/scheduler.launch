@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="deliver_scheduler" type="scheduler_server.py" name="scheduler_server" output="screen"/>
+</launch>
