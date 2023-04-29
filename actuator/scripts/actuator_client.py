@@ -43,6 +43,8 @@ class CarActuator(object):
         self.request = DestinationMsgRequest()  # 定义请求
         self.request.car_no = int(sys.argv[1])  # 设定编号
 
+        self.responseToABC = {"A": 0, "B": 1, "C": 2}
+
         quaternions = list()
         euler_angles = (
             pi / 2,
@@ -67,6 +69,7 @@ class CarActuator(object):
         point_ABC.append(Pose(Point(1.35, 2.03, 0), quaternions[2]))  # C点
 
         point_1234 = list()
+        point_1234[0] = None
         point_1234.append(Pose(Point(-1.93, 2.13, 0), quaternions[3]))  # 1点
         point_1234.append(Pose(Point(-1.03, 1.63, 0), quaternions[4]))  # 2点
         point_1234.append(Pose(Point(-1.93, 1.13, 0), quaternions[5]))  # 3点
@@ -103,7 +106,8 @@ class CarActuator(object):
                     rospy.loginfo("取药失败")
                     self.status = 6
             elif self.status == 5:
-                rospy.loginfo("到达取药区%d", self.response.drug_location)
+                newABC = self.responseToABC[self.response.drug_location]
+                rospy.loginfo("到达取药区%c", newABC)
                 self.actuator_updateABC()  # 上报
                 rospy.sleep(3)  # 原地待一会
                 self.status = 7
@@ -180,8 +184,8 @@ class CarActuator(object):
         self.response = self.client.call(self.request.car_no, self.request.request_type)
         rospy.loginfo("车辆代号：%d,本次请求：%d", self.request.car_no, self.request.request_type)
         rospy.loginfo(
-            "Get:%d,Send:%d",
-            self.response.drug_location,
+            "Get:%c,Send:%d",
+            self.responseToABC[self.response.drug_location],
             self.response.deliver_destination,
         )
         if (
