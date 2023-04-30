@@ -63,6 +63,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   DestinationMsg.srv
+  PermissionMsg.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -165,8 +166,9 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/actuator_client.py
-  scripts/actuator_server.py
+  scripts/actuator.py
+  scripts/mission_server.py
+  scripts/permission_client.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

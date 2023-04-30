@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="actuator" type="mission_server.py" name="scheduler" output="screen" />
+</launch>
