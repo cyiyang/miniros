@@ -6,12 +6,12 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from actionlib_msgs.msg import GoalStatus
 import actionlib
 from actuator.srv import DestinationMsg, DestinationMsgRequest
-from actuator.srv import PermissionMsg,PermissionMsgResponse
+from actuator.srv import PermissionMsg, PermissionMsgResponse
 from tf.transformations import quaternion_from_euler
 from geometry_msgs.msg import Point, Pose, Quaternion
 import sys
+from Announcer import Announcer
 from math import pi
-
 
 
 class CarActuator(object):
@@ -24,7 +24,9 @@ class CarActuator(object):
         self.mission_client.wait_for_service()
         rospy.loginfo("连上调度器服务器了")
 
-        self.permission_server =rospy.Service("permission",PermissionMsg,self.actuator_dealCV_ask)
+        self.permission_server = rospy.Service(
+            "permission", PermissionMsg, self.actuator_dealCV_ask
+        )
         rospy.loginfo("命令服务器正常启动")
 
         # 订阅move_base服务器的消息
@@ -41,7 +43,7 @@ class CarActuator(object):
 
         self.responseToABC = {"A": 0, "B": 1, "C": 2}
         # self.requestype_dic ={"GetNextTarget":1,"DrugLoaded":2,"Delivered":3}
-        #好像没啥用
+        # 好像没啥用
         quaternions = list()
         euler_angles = (
             pi / 2,
@@ -128,7 +130,6 @@ class CarActuator(object):
                 # rospy.sleep(3)  # 原地待一会
                 # self.status = 10
 
-
             # 送药相关
             elif self.status == 10:
                 rospy.loginfo("前往送药区")
@@ -181,8 +182,14 @@ class CarActuator(object):
     # 向服务器请求新任务,到达起点（标准数字区）
     def actuator_ask_newtarget(self):
         self.mission_request.request_type = 0  # 请求包编号为“请求新任务”
-        self.mission_response = self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type)
-        rospy.loginfo("车辆代号：%d,本次请求：%d", self.mission_request.car_no, self.mission_request.request_type)
+        self.mission_response = self.mission_client.call(
+            self.mission_request.car_no, self.mission_request.request_type
+        )
+        rospy.loginfo(
+            "车辆代号：%d,本次请求：%d",
+            self.mission_request.car_no,
+            self.mission_request.request_type,
+        )
         rospy.loginfo(
             "Get:%c,Send:%d",
             self.responseToABC[self.response.drug_location],
@@ -199,31 +206,38 @@ class CarActuator(object):
     # 向服务器上报已取药
     def actuator_updateABC(self):
         self.mission_request.request_type = 1  # 请求包编号为“完成取药”
-        self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type)
+        self.mission_client.call(
+            self.mission_request.car_no, self.mission_request.request_type
+        )
+        announcer.arrivePickUpPoint()
 
     # 向服务器上报已送药
     def actuator_update1234(self):
         self.mission_request.request_type = 2  # 请求包编号为“完成送药”
-        self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type)
+        self.mission_client.call(
+            self.mission_request.car_no, self.mission_request.request_type
+        )
+        announcer.arriveDispensingPoint()
 
     # 向服务器上报已到达手写数字识别区
     def actuator_arriveNum(self):
         self.mission_request.request_type = 3  # 请求包编号为“到达手写数字识别区”
-        self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type)
+        self.mission_client.call(
+            self.mission_request.car_no, self.mission_request.request_type
+        )
 
     # 处理来自CV的请求
-    def actuator_dealCV_ask(self,req):
-        if (req.request == 0) : #"想看请求"
-            if(self.status == 8):    #"已经到达识别区"
-                resp = PermissionMsgResponse(1) #可以看
-            else: 
-                resp = PermissionMsgResponse(0) #不可以
-        else:                           #"看完了"
-            self.status == 10           #离开
-            # resp = PermissionMsgResponse(0) 
-            
+    def actuator_dealCV_ask(self, req):
+        if req.request == 0:  # "想看请求"
+            if self.status == 8:  # "已经到达识别区"
+                resp = PermissionMsgResponse(1)  # 可以看
+            else:
+                resp = PermissionMsgResponse(0)  # 不可以
+        else:  # "看完了"
+            self.status == 10  # 离开
+            # resp = PermissionMsgResponse(0)
+
         return resp
-    
 
     def actuator_move(self, goal):
         # 把目标位置发送给MoveBaseAction的服务器
@@ -255,6 +269,7 @@ class CarActuator(object):
 if __name__ == "__main__":
     try:
         CarActuator()
+        announcer = Announcer()
     except rospy.ROSInterruptException:
         rospy.loginfo("程序意外退出")
         # except KeyboardInterrupt:
