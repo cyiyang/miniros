@@ -3,9 +3,10 @@
 import sys
 
 sys.path.append("/home/ncut/scheduler_ws/devel/lib/python2.7/dist-packages")
-from deliver_scheduler.srv import DestinationMsg, DestinationMsgResponse
-from scheduler import Scheduler, RequestType
 import rospy
+from deliver_scheduler.srv import DestinationMsg, DestinationMsgResponse
+
+from scheduler import RequestType, Scheduler
 
 DEBUG = 0
 

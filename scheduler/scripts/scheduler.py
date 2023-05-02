@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import time
 import threading
+import time
 from enum import Enum, unique
 
 

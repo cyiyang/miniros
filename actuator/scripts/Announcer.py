@@ -1,7 +1,8 @@
-from playsound import playsound
+import os
 import threading
 import time
-import os
+
+from playsound import playsound
 
 
 class Announcer:
