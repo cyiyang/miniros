@@ -12,7 +12,7 @@ class Announcer:
         if os.path.exists(self.DISPENSING_POINT_AUDIO) and os.path.exists(
             self.PICK_UP_POINT_AUDIO
         ):
-            raise FileNotFoundError("音频文件不存在")
+            raise IOError("音频文件不存在")
         # dispensing point 为配药点音频, pick up point为取药点音频
 
     def arriveDispensingPoint(self):
