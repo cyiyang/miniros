@@ -92,7 +92,8 @@ class CarActuator(object):
                 self.status = 4
             elif self.status == 3:
                 rospy.loginfo("请求失败")
-                self.actuator_shutdown()
+                self.actuator_ask_newtarget()
+                # self.actuator_shutdown()
 
             # 取药相关
             elif self.status == 4:
@@ -261,7 +262,6 @@ class CarActuator(object):
 if __name__ == "__main__":
     try:
         CarActuator()
-        
     except rospy.ROSInterruptException:
         rospy.loginfo("程序意外退出")
         # except KeyboardInterrupt:
