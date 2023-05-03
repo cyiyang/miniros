@@ -44,12 +44,13 @@ class CarActuator(object):
         self.mission_request = DestinationMsgRequest()  # 定义请求
         self.mission_request.car_no = int(sys.argv[1])  # 设定编号
 
-        self.responseToABC = {0: 'A', 1: 'B', 2: 'C'}
+        self.responseToABC = {-1:'E',0: 'A', 1: 'B', 2: 'C'}
         quaternions = list()
         euler_angles = (
             pi / 2,
             pi / 2,
             pi / 2,
+             0,
             -pi / 2,
             -pi / 2,
             -pi / 2,
@@ -64,19 +65,20 @@ class CarActuator(object):
             quaternions.append(q)
         # 创建特殊点列表
         point_ABC = list()
-        point_ABC.append(Pose(Point(0.49, 2.53, 0), quaternions[0]))  # A点
-        point_ABC.append(Pose(Point(1.33, 3.03, 0), quaternions[1]))  # B点
-        point_ABC.append(Pose(Point(1.33, 2.03, 0), quaternions[2]))  # C点
+        point_ABC.append(Pose(Point(0.92, 2.53, 0), quaternions[0]))  # A点
+        point_ABC.append(Pose(Point(0.92, 3.03, 0), quaternions[1]))  # B点
+        point_ABC.append(Pose(Point(0.92, 2.03, 0), quaternions[2]))  # C点
 
         point_1234 = list()
-        point_1234.append(Pose(Point(-1.90, 2.13, 0), quaternions[3]))  # 1点
-        point_1234.append(Pose(Point(-1.10, 1.63, 0), quaternions[4]))  # 2点
-        point_1234.append(Pose(Point(-1.90, 1.13, 0), quaternions[5]))  # 3点
-        point_1234.append(Pose(Point(-1.10, 0.63, 0), quaternions[6]))  # 4点
+        point_1234.append(Pose(Point(0,0,0), quaternions[3]))           #特殊点保护
+        point_1234.append(Pose(Point(-1.48, 2.13, 0), quaternions[4]))  # 1点
+        point_1234.append(Pose(Point(-1.48, 1.63, 0), quaternions[5]))  # 2点
+        point_1234.append(Pose(Point(-1.48, 1.13, 0), quaternions[6]))  # 3点
+        point_1234.append(Pose(Point(-1.48, 0.63, 0), quaternions[7]))  # 4点
 
         point_special = list()
-        point_special.append(Pose(Point(0, 0, 0), quaternions[7]))  # 起点
-        point_special.append(Pose(Point(-0.28, 3.78, 0), quaternions[8]))  # 手写数字识别点
+        point_special.append(Pose(Point(0, 0, 0), quaternions[8]))  # 起点
+        point_special.append(Pose(Point(-0.28, 3.78, 0), quaternions[9]))  # 手写数字识别点
 
         rospy.loginfo("特殊点创建成功")
 
@@ -93,7 +95,6 @@ class CarActuator(object):
             elif self.status == 3:
                 rospy.loginfo("请求失败")
                 self.actuator_ask_newtarget()
-                # self.actuator_shutdown()
 
             # 取药相关
             elif self.status == 4:
@@ -145,7 +146,7 @@ class CarActuator(object):
                     rospy.loginfo("送药失败")
                     self.status = 12
             elif self.status == 11:
-                rospy.loginfo("到达送药区%d", (self.mission_response.deliver_destination+1))
+                rospy.loginfo("到达送药区%d",self.mission_response.deliver_destination)
                 self.actuator_update1234()
                 rospy.sleep(3)  # 原地待一会
                 self.status = 13
@@ -189,7 +190,7 @@ class CarActuator(object):
         rospy.loginfo(
             "Get:%c,Send:%d",
             self.responseToABC[self.mission_response.drug_location],
-            (self.mission_response.deliver_destination+1),
+            self.mission_response.deliver_destination,
         )
         if (
             self.mission_response.drug_location != -1
@@ -262,6 +263,7 @@ class CarActuator(object):
 if __name__ == "__main__":
     try:
         CarActuator()
+        
     except rospy.ROSInterruptException:
         rospy.loginfo("程序意外退出")
         # except KeyboardInterrupt:
