@@ -1,3 +1,3 @@
 <launch>
-    <node pkg="actuator" type="actuator.py" args= "1" name="car_actuator" output="screen" />
+    <node pkg="actuator" type="actuator_ros.py" args= "1" name="car_actuator" output="screen" />
 </launch>

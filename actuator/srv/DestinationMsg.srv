@@ -6,6 +6,7 @@ int8 request_type
 # 1: 请求下一个目标 GetNextTarget 0 1 0 0
 # 2: 到达取药区，并取得药物 DrugLoaded 0 2 0 0
 # 3: 到达送药区，并交付药物 Delivered 0 3 0 0
+# 4: 到达手写数字识别区 
 int8 request_drug_type 
 # 0:A, 1:B, 2:C
 int8 request_deliver_destination
