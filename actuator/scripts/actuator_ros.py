@@ -183,7 +183,7 @@ class CarActuator(object):
     # 向服务器请求新任务,到达起点（标准数字区）
     def actuator_ask_newtarget(self):
         self.mission_request.request_type = 1  # 请求包编号为“请求新任务”
-        self.mission_response = self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,5,5)
+        self.mission_response = self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
         rospy.loginfo("车辆代号:%d,请求新任务", self.mission_request.car_no)
         rospy.loginfo(
             "Get:%c,Send:%d",
@@ -201,20 +201,20 @@ class CarActuator(object):
     # 向服务器上报已取药
     def actuator_updateABC(self):
         self.mission_request.request_type = 2  # 请求包编号为“完成取药”
-        self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,5,5)
+        self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
         self.announcer.arrivePickUpPoint()
 
 
     # 向服务器上报已送药
     def actuator_update1234(self):
         self.mission_request.request_type = 3  # 请求包编号为“完成送药”
-        self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,5,5)
+        self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
         self.announcer.arriveDispensingPoint()
 
     # 向服务器上报已到达手写数字识别区
     def actuator_arriveNum(self):
         self.mission_request.request_type = 4  # 请求包编号为“到达手写数字识别区”
-        self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,5,5)
+        self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
         
 
     # 处理来自CV的请求

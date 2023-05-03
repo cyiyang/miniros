@@ -1,6 +1,10 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
+#虚假的cv节点，模仿识别数字板的行为
+
+
 import rospy
 from actuator.srv import PermissionMsg, PermissionMsgRequest, PermissionMsgResponse
 

@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 # 制作虚假的服务器，进行调试
+#模仿scheduler的节点
+
 
 import rospy
 from actuator.srv import DestinationMsg, DestinationMsgRequest, DestinationMsgResponse

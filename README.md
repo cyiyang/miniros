@@ -38,3 +38,5 @@ roslaunch robot_navigation navigation_rviz.launch
 | 3点   |(24,87.5)   |(-1.93,1.13)  |(1200,4375)|
 | 4点   |(42.97.5)   |(-1.03,0.63)  |(2100,4875)|
 
+# 疑难杂症
+* vscode新建python 注意使用LF行尾队列
