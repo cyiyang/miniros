@@ -3,7 +3,6 @@
 
 import rospy
 from board_reminder.srv import NeedToSeeMsg, NeedToSeeMsgResponse
-
 from reminder import Reminder
 
 
