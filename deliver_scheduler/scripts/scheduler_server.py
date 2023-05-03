@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import sys
 
+# Future warning 不知道是干什么的
 sys.path.append("/home/ncut/scheduler_ws/devel/lib/python2.7/dist-packages")
 import rospy
 from deliver_scheduler.srv import DestinationMsg, DestinationMsgResponse
@@ -65,7 +66,7 @@ if __name__ == "__main__":
 
     # 将数字编码类型请求转换为GetNewRequest方法接受的字符类型"A","B","C"
     requestDrugTypeToString = {0: "A", 1: "B", 2: "C"}
-    requestDrugTypeToInt = {"A": 0, "B": 1, "C": 2}
+    requestDrugTypeToInt = {"A": 0, "B": 1, "C": 2, None: -1}
 
     rospy.init_node("scheduler_server")
     s = rospy.Service("mission", DestinationMsg, HandleRequests)
