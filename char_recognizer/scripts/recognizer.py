@@ -1,21 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import time
 import rospy
 import glob
 import cv2
 import numpy as np
 import imutils
 from sensor_msgs import Image
-from board_reminder.srv import NeedToSeeMsg, NeedToSeeMsgResponse, DestinationMsg
+from char_recognizer.srv import NeedToSeeMsg, NeedToSeeMsgResponse, DestinationMsg, PermissionMsg
 
-
-class recognizerChar:
-    def __init__(self):
+class ActualCharRecognizer:
+    def __init__(self, tmpl_path):
+        '''
+        :funciton: recognizerChar实例化
+        :param tmpl_path: 字母库在系统中的绝对路径, 末尾不含斜杠
+        '''
         self.charTmplLib = []
         for char in ('A','B','C'):
-            path = glob.glob('/home/eprobot/xb_ws/src/demo3/template/%s/*.jpg' %char)
+            path = glob.glob('%s/%s/*.jpg' %(tmpl_path, char))
             pathAndChar = list(zip(path, [char]*len(path)))
             self.charTmplLib.extend(pathAndChar)
 
@@ -161,40 +163,53 @@ class recognizerChar:
             charResult[i] = self.tmplMatch(charImages[i], 0.75)  # [参数!]
         return charResult
     
-
-class BoardReminderServer:
+class CharRecognizer():
     def __init__(self):
-        rospy.init_node("board_reminder_server")
-        self.recognizerChar = recognizerChar()  # 创建目标板识别器
+        rospy.init_node("char_recognizer")
+        self.ActualCharRecognizer = ActualCharRecognizer("/home/eprobot/xb_ws/src/demo3/template")  # 创建字母识别器(实际)
         self.scheduler_client = rospy.ServiceProxy(
             "mission", DestinationMsg
         )   # 创建调度器请求客户
+        self.actuator_client = rospy.ServiceProxy(
+            "permission", PermissionMsg
+        )   # 创建执行器请求客户
         self.board_reminder_server = rospy.Service(
             "board_reminder_server", NeedToSeeMsg, self.ReminderHandler
         )   # 创建目标板提示服务器
-        rospy.loginfo("目标板提示服务器、调度器请求客户正常启动")
+        rospy.loginfo("目标板提示服务器正常启动")
         rospy.wait_for_service("mission")
         rospy.loginfo("连接调度器服务器成功")
+        rospy.wait_for_service("permission")
+        rospy.loginfo("连接执行器服务器成功")
         rospy.spin()
-
+    
     def ReminderHandler(self, req):
         if req.need_to_see:
-            # Step1. 获取目标板照片
-            temp_sub = rospy.Subscriber('/camera/rgb/image_raw', Image)  # 创建临时的照片订阅
-            rospy.sleep(2)  # 延时2s, 等待相机自动曝光
-            board_image = rospy.wait_for_message('/camera/rgb/image_raw', Image)  # 订阅一次照片
-            temp_sub.unregister()   # 获取到照片后, 取消临时订阅
-            # Step2. 识别目标板字母
-            charResult = self.recognizerChar.recognize(board_image)
-            rospy.loginfo("识别成功, 结果: 1[%c] 2[%c] 3[%c] 4[%c]" %(charResult[0], charResult[1], charResult[2], charResult[3]))
-            # Step3. 向scheduler请求新的配送需求(作为client)
-            drugTypeToInt = {'A':0, 'B':1, 'C':2}
-            for i in range(4):
-                if charResult[i] != ' ':
-                    self.scheduler_client.call(0, 0, drugTypeToInt[charResult[i]], i+1)    # (i+1): 目的地编号为1~4
-                    rospy.loginfo("已请求新配送需求: 药品[%c] --> 窗口[%d]" %(charResult[i], i+1))
+            can_see = 0     # 默认“不能看”
+            while not can_see:
+                can_see = self.actuator_client.call(0).permission    # 向actuator请求“想看”
+                rospy.loginfo("已向执行器请求“想看”")
+                rospy.sleep(2)
+            self.RecognizeHandler()    # “能看”以后开始识别
         return NeedToSeeMsgResponse(True)
 
+    def RecognizeHandler(self):
+        # Step1. 获取目标板照片
+        temp_sub = rospy.Subscriber('/camera/rgb/image_raw', Image)  # 创建临时的照片订阅
+        rospy.sleep(2)  # 延时2s, 等待相机自动曝光
+        board_image = rospy.wait_for_message('/camera/rgb/image_raw', Image)  # 订阅一次照片
+        temp_sub.unregister()   # 获取到照片后, 取消临时订阅
+        # Step2. 识别目标板字母
+        charResult = self.ActualCharRecognizer.recognize(board_image)
+        rospy.loginfo("识别成功, 结果: 1[%c] 2[%c] 3[%c] 4[%c]" %(charResult[0], charResult[1], charResult[2], charResult[3]))
+        # Step3. 向scheduler请求新的配送需求(作为client)
+        drugTypeToInt = {'A':0, 'B':1, 'C':2}
+        for i in range(4):
+            if charResult[i] != ' ':
+                self.scheduler_client.call(0, 0, drugTypeToInt[charResult[i]], i+1)    # (i+1): 目的地编号为1~4
+                rospy.loginfo("已请求新配送需求: 药品[%c] --> 窗口[%d]" %(charResult[i], i+1))
+                self.actuator_client.call(1)    # 向actuator请求“看完了”
+                rospy.loginfo("已向执行器请求“看完了”")
 
 if __name__ == "__main__":
-    boardReminderServer = BoardReminderServer()
+    charRecognizer = CharRecognizer()

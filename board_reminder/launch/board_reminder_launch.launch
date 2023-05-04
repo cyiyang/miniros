@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="board_reminder" type="reminder_client.py" name="board_reminder_client" output="screen" />
+</launch>

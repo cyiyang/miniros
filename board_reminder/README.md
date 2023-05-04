@@ -1,10 +1,10 @@
-# reminder 功能包
+# board_reminder 功能包
 
 提醒小车在目标板更新时前往目标板查看新的任务。
 
 ## 服务定义
 
-Server 端：负责目标板识别的节点。
+Server 端：`char_recognizer`。
 Client 端：`board_reminder`.
 
 请求包含字段：
