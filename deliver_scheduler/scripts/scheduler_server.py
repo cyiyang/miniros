@@ -40,7 +40,7 @@ def HandleRequests(req):
         if response.drug_location is None:
             response.drug_location = -1
         if response.deliver_destination is None:
-            response.drug_location = -1
+            response.deliver_destination = -1
 
         rospy.loginfo("Response:")
         rospy.loginfo(response)
