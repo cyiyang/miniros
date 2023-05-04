@@ -23,6 +23,11 @@ def HandleRequests(req):
         rospy.loginfo("Got GetNewRequest!")
         # 将药物类型数字转换为字符"A","B","C"
         stringRequestDrugType = requestDrugTypeToString[req.request_drug_type]
+        rospy.loginfo(
+            "Scheduler receive new request from CV: Drug Type:%s, Deliver Destination: %d",
+            stringRequestDrugType,
+            req.request_deliver_destination,
+        )
         scheduler.GetNewRequest(stringRequestDrugType, req.request_deliver_destination)
         return emptyResponse
 
@@ -42,7 +47,7 @@ def HandleRequests(req):
         if response.deliver_destination is None:
             response.deliver_destination = -1
 
-        rospy.loginfo("Response:")
+        rospy.loginfo("Scheduler response to Actuator:")
         rospy.loginfo(response)
         return response
 
