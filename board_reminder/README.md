@@ -5,7 +5,7 @@
 ## 服务定义
 
 Server 端：负责目标板识别的节点。
-Client 端：`board_reminder`.
+Client 端：`reminder`.
 
 请求包含字段：
 
