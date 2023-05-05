@@ -12,7 +12,10 @@ from geometry_msgs.msg import Point, Pose, Quaternion
 import sys
 from math import pi
 from Announcer import Announcer
+import threading
 
+def thread_job():
+    rospy.spin()
 
 
 class CarActuator(object):
@@ -82,7 +85,9 @@ class CarActuator(object):
 
         rospy.loginfo("特殊点创建成功")
 
-
+        add_thread = threading.Thread(target=thread_job)
+        add_thread.start()
+        rospy.loginfo("deal CV thread OK")
 
         while not rospy.is_shutdown():
             # 请求任务相关
@@ -94,6 +99,7 @@ class CarActuator(object):
                 self.status = 4
             elif self.status == 3:
                 rospy.loginfo("请求失败")
+                rospy.sleep(5)
                 self.actuator_ask_newtarget()
 
             # 取药相关
@@ -175,7 +181,8 @@ class CarActuator(object):
                     self.status += 1
                 else:
                     self.status = 10  # 回退到上一状态，也就是前往送药区
-        rospy.spin()
+            
+       
 
     # 程序退出执行
     def actuator_shutdown(self):
@@ -224,10 +231,12 @@ class CarActuator(object):
     def actuator_dealCV_ask(self,req):
         rospy.loginfo("dealCV")
         if (req.request == 0) : #"想看请求"
-            if(self.status == 8):    #"已经到达识别区"
+            if(self.status == 1 or self.status == 3):    #"已经到达识别区"
+                rospy.loginfo("answer OK")
                 resp = PermissionMsgResponse(1) #可以看
             else: 
                 resp = PermissionMsgResponse(0) #不可以
+                rospy.loginfo("answer No!")
         else:                           #"看完了"
             self.status == 10           #离开
             # resp = PermissionMsgResponse(0) 
