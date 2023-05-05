@@ -12,6 +12,7 @@ if [ $? -eq 0 ]; then
     rsync -av --delete EPRobot@EPRobot:/home/EPRobot/robot_ws/src/actuator/ /home/$(whoami)/drug-deliverer/actuator/
     rsync -av --delete EPRobot@EPRobot:/home/EPRobot/robot_ws/src/deliver_scheduler/ /home/$(whoami)/drug-deliverer/deliver_scheduler/
     rsync -av --delete EPRobot@EPRobot:/home/EPRobot/robot_ws/src/board_reminder/ /home/$(whoami)/drug-deliverer/board_reminder/
+    rsync -av --delete EPRobot@EPRobot:/home/EPRobot/robot_ws/src/char_recognizer/ /home/$(whoami)/drug-deliverer/char_recognizer/
     echo "成功同步至小车"
 else
     echo "无法连接到小车，与小车的同步不会进行"
