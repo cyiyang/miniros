@@ -8,7 +8,6 @@ project(board_reminder)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_runtime
   roscpp
   rospy
   std_msgs
@@ -59,6 +58,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   NeedToSeeMsg.srv
+  DestinationMsg.srv
 )
 
 ## Generate actions in the 'action' folder

@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="char_recognizer" type="fake_actuator_server.py" name="fake_actuator_server" output="screen" />
+</launch>
