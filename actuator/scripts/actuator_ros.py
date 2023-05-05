@@ -26,8 +26,8 @@ class CarActuator(object):
         self.mission_client.wait_for_service()
         rospy.loginfo("连上调度器服务器了")
 
-        # self.permission_server =rospy.Service("permission",PermissionMsg,self.actuator_dealCV_ask)
-        # rospy.loginfo("命令服务器正常启动")
+        self.permission_server =rospy.Service("permission",PermissionMsg,self.actuator_dealCV_ask)
+        rospy.loginfo("命令服务器正常启动")
 
         # 订阅move_base服务器的消息
         self.move_base_client = actionlib.SimpleActionClient(
@@ -82,7 +82,7 @@ class CarActuator(object):
 
         rospy.loginfo("特殊点创建成功")
 
-        # rospy.spin()
+
 
         while not rospy.is_shutdown():
             # 请求任务相关
@@ -175,6 +175,7 @@ class CarActuator(object):
                     self.status += 1
                 else:
                     self.status = 10  # 回退到上一状态，也就是前往送药区
+        rospy.spin()
 
     # 程序退出执行
     def actuator_shutdown(self):
@@ -221,6 +222,7 @@ class CarActuator(object):
 
     # 处理来自CV的请求
     def actuator_dealCV_ask(self,req):
+        rospy.loginfo("dealCV")
         if (req.request == 0) : #"想看请求"
             if(self.status == 8):    #"已经到达识别区"
                 resp = PermissionMsgResponse(1) #可以看
