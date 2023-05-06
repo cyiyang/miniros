@@ -239,7 +239,7 @@ class CarActuator(object):
                 rospy.loginfo("answer No!")
         else:                           #"看完了"
             self.status == 10           #离开
-            # resp = PermissionMsgResponse(0) 
+            resp = PermissionMsgResponse(0)
             
         return resp
     
