@@ -79,7 +79,7 @@ class ActualCharRecognizer:
         image_forCnt = image_edged.copy()  # 用于提取轮廓的edged图
         self.image_forChar = image.copy()  # 用于抠出字母框作匹配的color图
         while not found:
-            cnts, hier = cv2.findContours(image_forCnt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            temp, cnts, hier = cv2.findContours(image_forCnt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cnts = sorted(cnts, key=cv2.contourArea, reverse=True)  # 取面积最大轮廓
             approx = self.vertexFind(cnts[0])
             aprx = approx.reshape(4, 2)
@@ -162,7 +162,7 @@ class ActualCharRecognizer:
         for i in range(4):
             charResult[i] = self.tmplMatch(charImages[i], 0.7)  # [参数!]
         return charResult
-    
+
 class CharRecognizer():
     def __init__(self):
         rospy.init_node("char_recognizer")
