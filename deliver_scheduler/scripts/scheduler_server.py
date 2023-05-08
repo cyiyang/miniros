@@ -20,11 +20,11 @@ def HandleRequests(req):
     response = DestinationMsgResponse()
 
     if req.request_type == RequestType.GetNewRequest.value:
-        rospy.loginfo("Got GetNewRequest!")
+        rospy.loginfo("[scheduler]收到新的目标板信息!")
         # 将药物类型数字转换为字符"A","B","C"
         stringRequestDrugType = requestDrugTypeToString[req.request_drug_type]
         rospy.loginfo(
-            "Scheduler receive new request from CV: Drug Type:%s, Deliver Destination: %d",
+            "[scheduler] 新的药物需求类型:%s, 配送重点: %d",
             stringRequestDrugType,
             req.request_deliver_destination,
         )
@@ -32,7 +32,7 @@ def HandleRequests(req):
         return emptyResponse
 
     if req.request_type == RequestType.GetNextTarget.value:
-        rospy.loginfo("Got GetNextTarget!")
+        rospy.loginfo("[scheduler] 收到获取新目标请求!")
         # FUTURE WARNING: Service的requestType和scheduler的requestType含义不同，之后可能会统一
 
         schedulerResponse = scheduler.GetNextTarget()
@@ -42,12 +42,12 @@ def HandleRequests(req):
         response.deliver_destination = schedulerResponse["deliverDestination"]
 
         # 对于当前无目标的情形，schedulerResponse的两个字段均为None, 在这里用-1表示None
-        if response.drug_location is None:
+        if response.drug_location is None or response.deliver_destination is None:
             response.drug_location = -1
-        if response.deliver_destination is None:
             response.deliver_destination = -1
+            rospy.loginfo("[scheduler] 当前没有目标!")
 
-        rospy.loginfo("Scheduler response to Actuator:")
+        rospy.loginfo("[scheduler] 对 actuator 的回复:")
         rospy.loginfo(response)
         return response
 
@@ -75,6 +75,6 @@ if __name__ == "__main__":
 
     rospy.init_node("scheduler_server")
     s = rospy.Service("mission", DestinationMsg, HandleRequests)
-    print("Scheduler server ready.")
+    print("[scheduler] 调度器就绪!")
 
     SchedulerServerMain()
