@@ -21,12 +21,12 @@ class Announcer:
     def arriveDispensingPoint(self):
         thread = threading.Thread(target=playsound, args=(self.DISPENSING_POINT_AUDIO,))
         thread.start()
-        thread.join()
+        # thread.join()
 
     def arrivePickUpPoint(self):
         thread = threading.Thread(target=playsound, args=(self.PICK_UP_POINT_AUDIO,))
         thread.start()
-        thread.join()
+        # thread.join()
 
 
 if __name__ == "__main__":
