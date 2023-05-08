@@ -24,7 +24,7 @@ def HandleRequests(req):
         # 将药物类型数字转换为字符"A","B","C"
         stringRequestDrugType = requestDrugTypeToString[req.request_drug_type]
         rospy.loginfo(
-            "[scheduler] 新的药物需求类型:%s, 配送重点: %d",
+            "[scheduler] 新的药物需求类型:%s, 配送终点: %d",
             stringRequestDrugType,
             req.request_deliver_destination,
         )

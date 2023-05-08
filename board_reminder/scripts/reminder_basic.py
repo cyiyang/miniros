@@ -29,7 +29,7 @@ class Reminder(object):
         self.timerUpdateThread.start()
 
         # 在比赛开始时，NeedToSee状态应该为真(检测比赛开始时起点的目标板)，创建一个倒计时1s的一次性定时器来完成该任务
-        initialTimer = threading.Timer(0.1, self.DefaultRemind)
+        initialTimer = threading.Timer(5, self.DefaultRemind)
         initialTimer.start()
 
     def DefaultRemind(self):

@@ -26,11 +26,11 @@ class CarActuator(object):
         self.mission_client = rospy.ServiceProxy("mission", DestinationMsg)
         rospy.loginfo("调度器客户端正常启动了")
 
-        self.mission_client.wait_for_service()
-        rospy.loginfo("连上调度器服务器了")
-
         self.permission_server =rospy.Service("permission",PermissionMsg,self.actuator_dealCV_ask)
         rospy.loginfo("命令服务器正常启动")
+
+        self.mission_client.wait_for_service()
+        rospy.loginfo("连上调度器服务器了")
 
         # 订阅move_base服务器的消息
         self.move_base_client = actionlib.SimpleActionClient(
