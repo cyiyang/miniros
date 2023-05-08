@@ -16,7 +16,7 @@ static_layer:  # 静态地图层
   enabled:              true
   map_topic:            "/map"
 
-  inflation_layer:  #膨胀物层
+inflation_layer:  #膨胀物层
   enabled:              true  #启用该层
   # 狠调下面两行
   cost_scaling_factor:  5  # 膨胀过程中应用到代价值的比例因子，增大该比例因子会降低代价值，已修改
