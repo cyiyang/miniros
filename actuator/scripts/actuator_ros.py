@@ -118,7 +118,7 @@ class CarActuator(object):
                 newABC = self.responseToABC[self.mission_response.drug_location]
                 rospy.loginfo("到达取药区%c", newABC)
                 self.actuator_updateABC()  # 上报
-                rospy.sleep(3)  # 原地待一会
+                rospy.sleep(2)  # 原地待一会
                 self.status = 7
 
             # 手写数字相关
@@ -135,7 +135,7 @@ class CarActuator(object):
                     self.status = 9
             elif self.status == 8:
                 rospy.loginfo("到达手写数字识别区")
-                rospy.sleep(3)  # 原地待一会
+                rospy.sleep(2)  # 原地待一会
                 self.status = 10
 
 
@@ -154,7 +154,7 @@ class CarActuator(object):
             elif self.status == 11:
                 rospy.loginfo("到达送药区%d",self.mission_response.deliver_destination)
                 self.actuator_update1234()
-                rospy.sleep(3)  # 原地待一会
+                rospy.sleep(2)  # 原地待一会
                 self.status = 13
 
             # 起点相关
@@ -171,8 +171,6 @@ class CarActuator(object):
                     self.status = 15
             elif self.status == 14:
                 rospy.loginfo("到达起点")
-                # self.actuator_arriveNum()
-                rospy.sleep(3)  # 原地待一会
                 self.status = 1
 
             # 异常相关
@@ -210,26 +208,27 @@ class CarActuator(object):
 
     # 向服务器上报已取药
     def actuator_updateABC(self):
-        self.mission_request.request_type = 2  # 请求包编号为“完成取药”
+        self.mission_request.request_type = 2  # 请求包编号为“完成取药/ABC”
         self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
-        self.announcer.arrivePickUpPoint()
+        self.announcer.arriveDispensingPoint()
+ 
 
 
     # 向服务器上报已送药
     def actuator_update1234(self):
-        self.mission_request.request_type = 3  # 请求包编号为“完成送药”
+        self.mission_request.request_type = 3  # 请求包编号为“完成送药/1234”
         self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
-        self.announcer.arriveDispensingPoint()
+        self.announcer.arrivePickUpPoint()
 
-    # 向服务器上报已到达手写数字识别区
-    def actuator_arriveNum(self):
+    # 向服务器上报已到达手写数字识别区，未增加
+    def actuator_arriveHandNum(self):
         self.mission_request.request_type = 4  # 请求包编号为“到达手写数字识别区”
         self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
         
 
     # 处理来自CV的请求
     def actuator_dealCV_ask(self,req):
-        rospy.loginfo("dealCV")
+        rospy.loginfo("处理识别器请求！")
         if (req.request == 0) : #"想看请求"
             if(self.status == 1 or self.status == 3):    #"已经到达识别区"
                 rospy.loginfo("answer OK")
