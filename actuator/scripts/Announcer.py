@@ -10,8 +10,8 @@ from playsound import playsound
 
 class Announcer:
     def __init__(self) :
-        self.DISPENSING_POINT_AUDIO = "/home/EPRobot/Music/get.mp3"
-        self.PICK_UP_POINT_AUDIO = "/home/EPRobot/Music/send.mp3"
+        self.DISPENSING_POINT_AUDIO = "/home/EPRobot/Music/dispense.mp3"
+        self.PICK_UP_POINT_AUDIO = "/home/EPRobot/Music/pick_up.mp3"
         if (not os.path.exists(self.DISPENSING_POINT_AUDIO)) or (not os.path.exists(
             self.PICK_UP_POINT_AUDIO
         )):

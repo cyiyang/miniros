@@ -208,17 +208,17 @@ class CarActuator(object):
 
     # 向服务器上报已取药
     def actuator_updateABC(self):
-        self.mission_request.request_type = 2  # 请求包编号为“完成取药/ABC”
-        self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
         self.announcer.arriveDispensingPoint()
+        self.mission_request.request_type = 2  # 请求包编号为“完成配药/ABC”
+        self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
+        
  
-
-
     # 向服务器上报已送药
     def actuator_update1234(self):
+        self.announcer.arrivePickUpPoint()
         self.mission_request.request_type = 3  # 请求包编号为“完成送药/1234”
         self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
-        self.announcer.arrivePickUpPoint()
+       
 
     # 向服务器上报已到达手写数字识别区，未增加
     def actuator_arriveHandNum(self):
@@ -226,17 +226,18 @@ class CarActuator(object):
         self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
         
 
-    # 处理来自CV的请求
+    # 处理来自识别器的请求
     def actuator_dealCV_ask(self,req):
-        rospy.loginfo("处理识别器请求！")
         if (req.request == 0) : #"想看请求"
+            rospy.loginfo("接受：[想看]")
             if(self.status == 1 or self.status == 3):    #"已经到达识别区"
-                rospy.loginfo("answer OK")
                 resp = PermissionMsgResponse(1) #可以看
+                rospy.loginfo("回复；[可以]")
             else: 
                 resp = PermissionMsgResponse(0) #不可以
-                rospy.loginfo("answer No!")
+                rospy.loginfo("回复；[拒绝]")
         else:                           #"看完了"
+            rospy.loginfo("接受：[看完]")
             self.status == 10           #离开
             resp = PermissionMsgResponse(0)
             
