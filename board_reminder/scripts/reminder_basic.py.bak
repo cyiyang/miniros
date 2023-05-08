@@ -10,9 +10,9 @@ DEBUGING = True
 
 
 class Reminder(object):
-    """每隔Interval时间非阻塞调用DefaultRemind方法的定时器对象,第一个定时器的等待时间为firstInterval"""
+    """每隔Interval时间非阻塞调用DefaultRemind方法的定时器对象"""
 
-    def __init__(self, defaultInterval=3 * 60):
+    def __init__(self, defaultInterval=3 * 60, elapsedTimeRemindInterval=5):
         self.defaultInterval = defaultInterval
         # Python 的 Timer 是一次性的，因此周期性任务需要在上一个 Timer 结束时释放出新的 Timer,
         # 考虑到 ROS 等待服务返回是阻塞的，因此每次均新建一个 Timer, 而不是在旧的 Timer 的回调函数中重新开始 Timer.
@@ -22,18 +22,40 @@ class Reminder(object):
         self.defaultTimerUpdater = threading.Timer(
             self.defaultInterval, self.CreateNewDefaultTimer
         )
+
+        # 创建计时器（每 elapsedTimeRemindInterval 秒打印流逝时间）
+        self.elapsedTimeRemindInterval = elapsedTimeRemindInterval
+        # 经过的秒数为 elapsedTimeRemindInterval*elapsedTimeCounter
+        self.elapsedTimeCounter = 0
+
+        # 创建维护计时器的定时器
+        self.elapsedTimeReminderUpdater = threading.Timer(
+            self.elapsedTimeRemindInterval, self.CreateNewElapsedTimeReminderTimer
+        )
+
+        # 创建定时器维护线程
         self.running = True
         self.timerUpdateThread = threading.Thread(target=self.ReminderMain)
 
-    def start(self):
-        # 启动之前定义的定时器和线程
+        # 在比赛开始时，NeedToSee状态应该为真(检测比赛开始时起点的目标板)，综合考虑其余节点的初始化状态，因此创建一个倒计时5s的一次性定时器来完成该任务
+        initialTimer = threading.Timer(5, self.DefaultRemind)
+
+        # 启动之前定义的定时器
         self.defaultTimerUpdater.start()
+        self.elapsedTimeReminderUpdater.start()
+        initialTimer.start()
         self.timerUpdateThread.start()
 
     def DefaultRemind(self):
         """每三分钟触发一次该函数。"""
         if DEBUGING:
             print("Triggered Default Remind, but do nothing!")
+        else:
+            raise NotImplementedError("请在子类中实现该方法")
+
+    def ElapsedTimeRemind(self):
+        if DEBUGING:
+            print("Triggered Elapsed Time Remind, but do nothing!")
         else:
             raise NotImplementedError("请在子类中实现该方法")
 
@@ -49,13 +71,26 @@ class Reminder(object):
                 )
                 self.defaultTimerUpdater.start()
                 print("Release new timerUpdater!")
-            # if self.fullBoard:
+            if self.elapsedTimerUpdater.is_alive():
+                pass
+            else:
+                self.defaultTimerUpdater = threading.Timer(
+                    self.defaultInterval, self.CreateNewElapsedTimeReminderTimer
+                )
+                self.defaultTimerUpdater.start()
+                print("Release new CreateNewElapsedTimeReminderTimer!")
 
     def CreateNewDefaultTimer(self):
         """创建新的三分钟定时器"""
         timer = threading.Timer(self.defaultInterval, self.DefaultRemind)
         timer.start()
         print("Release new DefaultTimer!")
+        return timer
+
+    def CreateNewElapsedTimeReminderTimer(self):
+        timer = threading.Timer(self.defaultInterval, self.ElapsedTimeRemind)
+        timer.start()
+        print("Release new ElapsedTimeReminderTimer!")
         return timer
 
     def FullBoardUpdateReminder(self):
@@ -71,6 +106,7 @@ class Reminder(object):
 
 class AutoReloadTimer(object):
     def __init__(self, interval, function, argsToFunction=None, autoReload=True):
+        raise RuntimeError("该类未完成")
         self.interval = interval
         self.function = function
         self.argsToFunction = argsToFunction
