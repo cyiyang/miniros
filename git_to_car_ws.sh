@@ -15,7 +15,7 @@ if [ $? -eq 0 ]; then
     rsync -av --delete /home/$(whoami)/drug-deliverer/deliver_scheduler/ EPRobot@EPRobot:/home/EPRobot/robot_ws/src/deliver_scheduler/
     rsync -av --delete /home/$(whoami)/drug-deliverer/board_reminder/ EPRobot@EPRobot:/home/EPRobot/robot_ws/src/board_reminder/
     rsync -av --delete /home/$(whoami)/drug-deliverer/char_recognizer/ EPRobot@EPRobot:/home/EPRobot/robot_ws/src/char_recognizer/
-    echo "成功同步至小车"
+    echo "成功将本地drug-deliverer仓库的修改同步到小车的工作空间"
 else
     echo "无法连接到小车，与小车的同步不会进行"
 fi

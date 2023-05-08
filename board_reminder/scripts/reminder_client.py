@@ -2,10 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import sys
+
 sys.path.append("/home/fanch/demo2/src/board_reminder/scripts")
+
+import threading
 
 import rospy
 from reminder_basic import Reminder
+
 from board_reminder.srv import NeedToSeeMsg, NeedToSeeMsgResponse
 
 

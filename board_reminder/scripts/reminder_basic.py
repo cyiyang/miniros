@@ -8,7 +8,10 @@ import warnings
 
 DEBUGING = True
 
+
 class Reminder(object):
+    """每隔Interval时间非阻塞调用DefaultRemind方法的定时器对象"""
+
     def __init__(self, defaultInterval=3 * 60):
         self.defaultInterval = defaultInterval
         # Python 的 Timer 是一次性的，因此周期性任务需要在上一个 Timer 结束时释放出新的 Timer,
@@ -21,8 +24,13 @@ class Reminder(object):
         self.timerUpdater.start()
         self.defaultTimer = threading.Timer(self.defaultInterval, self.DefaultRemind)
         self.defaultTimer.start()
+        # 创建定时器维护线程
         self.timerUpdateThread = threading.Thread(target=self.ReminderMain)
         self.timerUpdateThread.start()
+
+        # 在比赛开始时，NeedToSee状态应该为真(检测比赛开始时起点的目标板)，创建一个倒计时1s的一次性定时器来完成该任务
+        initialTimer = threading.Timer(0.1, self.DefaultRemind)
+        initialTimer.start()
 
     def DefaultRemind(self):
         """每三分钟触发一次该函数。"""
@@ -33,6 +41,7 @@ class Reminder(object):
 
     def ReminderMain(self):
         while self.running:
+            # 检查配送目标板提示定时器的运行状态，如定时已结束，则新建配送目标板提示定时器
             if self.timerUpdater.is_alive():
                 pass
             else:
