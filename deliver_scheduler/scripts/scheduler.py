@@ -27,7 +27,7 @@ class Scheduler:
         self.drugRemainLock = threading.Lock()
 
         # self.drugSupplementInterval = {"A": 120, "B": 60, "C": 40}
-        self.drugSupplementInterval = {"A": 12, "B": 6, "C": 4}
+        self.drugSupplementInterval = {"A": 120, "B": 60, "C": 40}
 
         self.__noTarget = {
             "requestType": None,
