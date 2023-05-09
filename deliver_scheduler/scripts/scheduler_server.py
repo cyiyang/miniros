@@ -7,7 +7,7 @@ sys.path.append("/home/ncut/scheduler_ws/devel/lib/python2.7/dist-packages")
 import rospy
 from deliver_scheduler.srv import DestinationMsg, DestinationMsgResponse
 
-from scheduler import RequestType, Scheduler
+from scheduler import RequestType, Scheduler, TargetStatus
 
 DEBUG = 0
 
@@ -34,8 +34,13 @@ def HandleRequests(req):
     if req.request_type == RequestType.GetNextTarget.value:
         rospy.loginfo("[scheduler] 收到获取新目标请求!")
         # FUTURE WARNING: Service的requestType和scheduler的requestType含义不同，之后可能会统一
-
-        schedulerResponse = scheduler.GetNextTarget()
+        rospy.loginfo(
+            "[scheduler] 当前药物剩余: A:%d, B:%d, C:%d",
+            scheduler.GetRemainDrug("A"),
+            scheduler.GetRemainDrug("B"),
+            scheduler.GetRemainDrug("C"),
+        )
+        schedulerResponse, status = scheduler.GetNextTarget()
 
         # schedulerResponse的requestType字段为请求药物的类型，为字符，需要将其转换为整数
         response.drug_location = requestDrugTypeToInt[schedulerResponse["requestType"]]
@@ -45,7 +50,10 @@ def HandleRequests(req):
         if response.drug_location is None or response.deliver_destination is None:
             response.drug_location = -1
             response.deliver_destination = -1
-            rospy.loginfo("[scheduler] 当前没有目标!")
+            if status == TargetStatus.NO_DRUG_REMAIN.value:
+                rospy.loginfo("[scheduler] 当前没有目标! 因为药品没有库存")
+            elif status == TargetStatus.NO_MORE_REQUEST.value:
+                rospy.loginfo("[scheduler] 当前没有目标! 因为没有配送需求")
 
         rospy.loginfo("[scheduler] 对 actuator 的回复:")
         rospy.loginfo(response)

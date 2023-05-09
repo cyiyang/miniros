@@ -67,19 +67,17 @@ class Scheduler:
                 for index, target in enumerate(self.queue):
                     # TODO: 实现优先级高的药物不可用时切换至下一类药物
                     if (
-                        self.__GetRemainDrugWithLock(
-                            target["requestType"], self.drugRemainLock
-                        )
+                        self.GetRemainDrug(target["requestType"], self.drugRemainLock)
                         >= 1
                     ):
                         self.nextTarget = self.queue.pop(index)
-                        return self.nextTarget
+                        return self.nextTarget, TargetStatus.SUCCESS.value
                 # 循环正常结束，表明需求的药物现在都没有，应返回无目标
-                return self.__noTarget
+                return self.__noTarget, TargetStatus.NO_DRUG_REMAIN.value
                 # self.nextTarget = self.queue.pop()
             else:
                 # 小哥没有取药需求
-                return self.__noTarget
+                return self.__noTarget, TargetStatus.NO_MORE_REQUEST.value
 
         # return {
         #     "requestType": self.nextTarget["requestType"],
@@ -143,7 +141,7 @@ class Scheduler:
         with self.drugRemainLock:
             self.drugRemain[drugType] += addend
 
-    def __GetRemainDrugWithLock(self, drugType, lock):
+    def GetRemainDrug(self, drugType):
         with self.drugRemainLock:
             return self.drugRemain[drugType]
 
@@ -157,3 +155,6 @@ class RequestType(Enum):
     GetNextTarget = 1
     DrugLoaded = 2
     Delivered = 3
+
+
+TargetStatus = Enum("TargetStatus", ("SUCCESS", "NO_DRUG_REMAIN", "NO_MORE_REQUEST"))
