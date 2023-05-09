@@ -24,13 +24,10 @@ TebLocalPlannerROS:
 
  # Robot 机器人
 
-#  max_vel_x: 0.6  #最大x向速度,
- max_vel_x: 1.2  #最大x向速度,
-
+#
+ max_vel_x: 0.6  #最大x向速度,
  max_vel_y: 0.0  #最大y向速度，非全向为0
-
-#  max_vel_x_backwards: 0.3 #最大x后退速度
- max_vel_x_backwards: 1.2 #最大x后退速度
+ max_vel_x_backwards: 0.6 #最大x后退速度
 
  max_vel_theta: 0.8 # the angular velocity is also bounded by min_turning_radius in case of a carlike robot (r = v / omega)
  acc_lim_x: 0.1  #最大x加速度
@@ -52,14 +49,14 @@ TebLocalPlannerROS:
 
  # GoalTolerance 目标容忍度
 
- xy_goal_tolerance: 0.05  #目标xy偏移容忍度原来为0.2
+ xy_goal_tolerance: 0.1  #目标xy偏移容忍度原来为0.2
  yaw_goal_tolerance: 0.2   #目标角度容忍偏移度
  free_goal_vel: False   #允许机器人以最大速度到达目的地，这里要停稳，所以为false
 
  # Obstacles 障碍物
 
  min_obstacle_dist: 0.15 # 与障碍的最小期望距离
- inflation_dist : 0.18  # 障碍物周围缓冲区
+ inflation_dist : 0.08  # 障碍物周围缓冲区
  include_costmap_obstacles: True #
  include_dynamic_obstacles: True
  costmap_obstacles_behind_robot_dist: 1.0 #

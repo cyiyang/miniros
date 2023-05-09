@@ -23,14 +23,10 @@ class CarActuator(object):
         rospy.init_node("car_actuator")
         rospy.on_shutdown(self.actuator_shutdown)
 
-        self.mission_client = rospy.ServiceProxy("mission", DestinationMsg)
-        rospy.loginfo("调度器客户端正常启动了")
+
 
         self.permission_server =rospy.Service("permission",PermissionMsg,self.actuator_dealCV_ask)
         rospy.loginfo("命令服务器正常启动")
-
-        self.mission_client.wait_for_service()
-        rospy.loginfo("连上调度器服务器了")
 
         # 订阅move_base服务器的消息
         self.move_base_client = actionlib.SimpleActionClient(
@@ -39,6 +35,14 @@ class CarActuator(object):
         rospy.loginfo("等待连接move_base服务器")
         self.move_base_client.wait_for_server()
         rospy.loginfo("连上move_base 服务器了")
+
+        self.mission_client = rospy.ServiceProxy("mission", DestinationMsg)
+        rospy.loginfo("调度器客户端正常启动了")
+
+        self.mission_client.wait_for_service()
+        rospy.loginfo("连上调度器服务器了")
+
+
 
         self.announcer = Announcer()
         rospy.loginfo("Music on!!!")
@@ -68,16 +72,16 @@ class CarActuator(object):
             quaternions.append(q)
         # 创建特殊点列表
         point_ABC = list()
-        point_ABC.append(Pose(Point(0.92, 2.53, 0), quaternions[0]))  # A点
-        point_ABC.append(Pose(Point(0.92, 3.03, 0), quaternions[1]))  # B点
-        point_ABC.append(Pose(Point(0.92, 2.03, 0), quaternions[2]))  # C点
+        point_ABC.append(Pose(Point(0.47, 2.53, 0), quaternions[0]))  # A点
+        point_ABC.append(Pose(Point(1.37, 3.03, 0), quaternions[1]))  # B点
+        point_ABC.append(Pose(Point(1.37, 2.03, 0), quaternions[2]))  # C点
 
         point_1234 = list()
         point_1234.append(Pose(Point(0,0,0), quaternions[3]))           #特殊点保护
-        point_1234.append(Pose(Point(-1.48, 2.13, 0), quaternions[4]))  # 1点
-        point_1234.append(Pose(Point(-1.48, 1.63, 0), quaternions[5]))  # 2点
-        point_1234.append(Pose(Point(-1.48, 1.13, 0), quaternions[6]))  # 3点
-        point_1234.append(Pose(Point(-1.48, 0.63, 0), quaternions[7]))  # 4点
+        point_1234.append(Pose(Point(-1.93, 2.13, 0), quaternions[4]))  # 1点
+        point_1234.append(Pose(Point(-1.03, 1.63, 0), quaternions[5]))  # 2点
+        point_1234.append(Pose(Point(-1.93, 1.13, 0), quaternions[6]))  # 3点
+        point_1234.append(Pose(Point(-1.03, 0.63, 0), quaternions[7]))  # 4点
 
         point_special = list()
         point_special.append(Pose(Point(0, 0, 0), quaternions[8]))  # 起点
