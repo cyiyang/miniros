@@ -40,6 +40,11 @@ def HandleRequests(req):
             scheduler.GetRemainDrug("B"),
             scheduler.GetRemainDrug("C"),
         )
+        currentQueue = scheduler.GetRequestStatus()
+        rospy.loginfo("[scheduler] 当前配送需求:")
+        for item in currentQueue:
+            rospy.loginfo("[scheduler] %c -> %d", item[0], item[1])
+
         schedulerResponse, status = scheduler.GetNextTarget()
 
         # schedulerResponse的requestType字段为请求药物的类型，为字符，需要将其转换为整数

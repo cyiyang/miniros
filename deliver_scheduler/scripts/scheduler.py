@@ -59,30 +59,22 @@ class Scheduler:
             {"requestType": "A", "deliverDestination": 1}
             {"requestType": None, "deliverDestination": None}
         """
-
-        if self.nextTarget is None:
-            if self.queue:
-                # 小哥有取药需求时，更新优先级
-                self.UpdatePriority()
-                for index, target in enumerate(self.queue):
-                    # TODO: 实现优先级高的药物不可用时切换至下一类药物
-                    if (
-                        self.GetRemainDrug(target["requestType"], self.drugRemainLock)
-                        >= 1
-                    ):
-                        self.nextTarget = self.queue.pop(index)
-                        return self.nextTarget, TargetStatus.SUCCESS.value
-                # 循环正常结束，表明需求的药物现在都没有，应返回无目标
-                return self.__noTarget, TargetStatus.NO_DRUG_REMAIN.value
-                # self.nextTarget = self.queue.pop()
-            else:
-                # 小哥没有取药需求
-                return self.__noTarget, TargetStatus.NO_MORE_REQUEST.value
-
-        # return {
-        #     "requestType": self.nextTarget["requestType"],
-        #     "deliverDestination": self.nextTarget["deliverDestination"],
-        # }
+        with self.queueLock:
+            if self.nextTarget is None:
+                if self.queue:
+                    # 小哥有取药需求时，更新优先级
+                    self.__UpdatePriority()
+                    for index, target in enumerate(self.queue):
+                        # TODO: 实现优先级高的药物不可用时切换至下一类药物
+                        if self.GetRemainDrug(target["requestType"]) >= 1:
+                            self.nextTarget = self.queue.pop(index)
+                            return self.nextTarget, TargetStatus.SUCCESS.value
+                    # 循环正常结束，表明需求的药物现在都没有，应返回无目标
+                    return self.__noTarget, TargetStatus.NO_DRUG_REMAIN.value
+                    # self.nextTarget = self.queue.pop()
+                else:
+                    # 小哥没有取药需求
+                    return self.__noTarget, TargetStatus.NO_MORE_REQUEST.value
 
     def Delivered(self):
         """
@@ -98,13 +90,14 @@ class Scheduler:
         """
         当获得新的快递小哥需求时，调用此函数。
         """
-        requestDetail = {
-            "priority": self.classWeights[requestType],
-            "requestType": requestType,
-            "deliverDestination": deliverDestination,
-            "elapsedTime": 0,
-        }
-        self.queue.append(requestDetail)
+        with self.queueLock:
+            requestDetail = {
+                "priority": self.classWeights[requestType],
+                "requestType": requestType,
+                "deliverDestination": deliverDestination,
+                "elapsedTime": 0,
+            }
+            self.queue.append(requestDetail)
 
     def UpdateRequestPeriod(self):
         """
@@ -113,30 +106,25 @@ class Scheduler:
         # To be implemented
         return False
 
-    def UpdatePriority(self, timeNow=time.time()):
+    def __UpdatePriority(self, timeNow=time.time()):
         """
         周期性运行，更新队伍中优先级
         """
         # TODO: 实现根据时间调整优先级
+        # 此处不能加锁，否则在 GetNextTarget 中调用该函数时会导致死锁；因此将该方法变成私有方法
         self.queue.sort(key=lambda x: x["priority"], reverse=True)
 
     def DrugLoaded(self):
         """当小车拾取药物，调用该函数。该函数会将nextTarget对应的剩余药物量-1"""
-        self.__UpdateRemainDrugWithLock(
-            self.nextTarget["requestType"], -1, self.drugRemainLock
-        )
+        self.__UpdateRemainDrug(self.nextTarget["requestType"], -1)
 
     def __DrugTracerMain(self, drugType):
         """周期性唤醒，使得某种药物的存量+1"""
         while self.running:
             time.sleep(self.drugSupplementInterval[drugType])
-            self.__UpdateRemainDrugWithLock(drugType, 1, self.drugRemainLock)
-            # self.__GetRemainDrugWithLock(drugType,self.drugRemainLock)
-            # print(
-            #     f"{drugType} updated! Remaining {drugType} for {self.__GetRemainDrugWithLock(drugType,self.drugRemainLock)}"
-            # )
+            self.__UpdateRemainDrug(drugType, 1)
 
-    def __UpdateRemainDrugWithLock(self, drugType, addend, lock):
+    def __UpdateRemainDrug(self, drugType, addend):
         """带有锁机制的药物更新。更新后drugType类型药物的数量为原数量+addend."""
         with self.drugRemainLock:
             self.drugRemain[drugType] += addend
@@ -144,6 +132,14 @@ class Scheduler:
     def GetRemainDrug(self, drugType):
         with self.drugRemainLock:
             return self.drugRemain[drugType]
+
+    def GetRequestStatus(self):
+        """返回当前优先级队列信息，包括需求类型和配送目的地"""
+        res = []
+        with self.queueLock:
+            for item in self.queue:
+                res.append((item["requestType"], item["deliverDestination"]))
+        return res
 
     def Terminate(self):
         self.running = False

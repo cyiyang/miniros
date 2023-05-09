@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """回归测试，修改后的Scheduler应通过该测试
 """
 
@@ -15,14 +16,14 @@ from scheduler import Scheduler
 if __name__ == "__main__":
     scheduler = Scheduler()
     scheduler.GetNewRequest("A", 1)
-    nextTarget = scheduler.GetNextTarget()
+    nextTarget, _ = scheduler.GetNextTarget()
     scheduler.DrugLoaded()
     time.sleep(5)
     scheduler.Delivered()
     scheduler.GetNewRequest("B", 2)
     scheduler.GetNewRequest("C", 4)
     scheduler.GetNewRequest("A", 1)
-    nextTarget = scheduler.GetNextTarget()
+    nextTarget, _ = scheduler.GetNextTarget()
     # 药物A无剩余，此时应该取药物B
     assert nextTarget["requestType"] == "B" and nextTarget["deliverDestination"] == 2
 
@@ -30,7 +31,7 @@ if __name__ == "__main__":
     # 等待药物A补充，同时送达当前药物
     scheduler.Delivered()
     scheduler.GetNewRequest("B", 3)
-    nextTarget = scheduler.GetNextTarget()
+    nextTarget, _ = scheduler.GetNextTarget()
     assert nextTarget["requestType"] == "A" and nextTarget["deliverDestination"] == 1
     scheduler.DrugLoaded()
     scheduler.Terminate()
