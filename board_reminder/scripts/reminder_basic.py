@@ -27,6 +27,7 @@ class Reminder(object):
 
     def start(self):
         # 启动之前定义的定时器和线程
+        self.CreateNewDefaultTimer()
         self.defaultTimerUpdater.start()
         self.timerUpdateThread.start()
 

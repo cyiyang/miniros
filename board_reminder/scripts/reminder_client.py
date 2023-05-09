@@ -60,4 +60,5 @@ class BoardReminder(Reminder):
 
 if __name__ == "__main__":
     boardReminder = BoardReminder()
+    boardReminder.start()
     rospy.spin()
