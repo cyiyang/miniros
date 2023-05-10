@@ -13,5 +13,3 @@ oscillation_distance: 0.2 #来回运动在多大距离以上不会认为是震�
 
 clearing_rotation_allowed: false 
 
-base_local_planner:  "base_local_planner/TrajectoryPlannerROS"  # 张聿璁增加
-base_global_planner: "global_planner/GlobalPlanner"             # 张聿璁增加
