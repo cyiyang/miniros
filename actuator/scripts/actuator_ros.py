@@ -23,8 +23,6 @@ class CarActuator(object):
         rospy.init_node("car_actuator")
         rospy.on_shutdown(self.actuator_shutdown)
 
-
-
         self.permission_server =rospy.Service("permission",PermissionMsg,self.actuator_dealCV_ask)
         rospy.loginfo("命令服务器正常启动")
 
@@ -72,20 +70,20 @@ class CarActuator(object):
             quaternions.append(q)
         # 创建特殊点列表
         point_ABC = list()
-        point_ABC.append(Pose(Point(0.47, 2.53, 0), quaternions[0]))  # A点
-        point_ABC.append(Pose(Point(1.37, 3.03, 0), quaternions[1]))  # B点
-        point_ABC.append(Pose(Point(1.37, 2.03, 0), quaternions[2]))  # C点
+        point_ABC.append(Pose(Point(0.42, 2.3, 0), quaternions[0]))  # A点
+        point_ABC.append(Pose(Point(1.28, 2.73, 0), quaternions[1]))  # B点
+        point_ABC.append(Pose(Point(1.28, 1.80, 0), quaternions[2]))  # C点
 
         point_1234 = list()
         point_1234.append(Pose(Point(0,0,0), quaternions[3]))           #特殊点保护
-        point_1234.append(Pose(Point(-1.93, 2.13, 0), quaternions[4]))  # 1点
-        point_1234.append(Pose(Point(-1.03, 1.63, 0), quaternions[5]))  # 2点
-        point_1234.append(Pose(Point(-1.93, 1.13, 0), quaternions[6]))  # 3点
-        point_1234.append(Pose(Point(-1.03, 0.63, 0), quaternions[7]))  # 4点
+        point_1234.append(Pose(Point(-1.90, 2.32, 0), quaternions[4]))  # 1点
+        point_1234.append(Pose(Point(-1.03, 1.80, 0), quaternions[5]))  # 2点
+        point_1234.append(Pose(Point(-1.88, 1.28, 0), quaternions[6]))  # 3点
+        point_1234.append(Pose(Point(-1.03, 0.88, 0), quaternions[7]))  # 4点
 
         point_special = list()
         point_special.append(Pose(Point(0, 0, 0), quaternions[8]))  # 起点
-        point_special.append(Pose(Point(-0.28, 3.78, 0), quaternions[9]))  # 手写数字识别点
+        point_special.append(Pose(Point(-0.4, 3.75, 0), quaternions[9]))  # 手写数字识别点
 
         rospy.loginfo("特殊点创建成功")
 
@@ -125,21 +123,22 @@ class CarActuator(object):
                 rospy.sleep(2)  # 原地待一会
                 self.status = 7
 
-            # 手写数字相关
+            # 手写数字相关,不处理手写数字，不停车
             elif self.status == 7:
                 rospy.loginfo("前往手写数字识别区")
                 goal = MoveBaseGoal()
                 goal.target_pose.header.frame_id = "map"
                 goal.target_pose.header.stamp = rospy.Time.now()
                 goal.target_pose.pose = point_special[1]
-                if self.actuator_move(goal) == True:
-                    self.status = 8
-                else:
-                    rospy.loginfo("手写数字识别区失败")
-                    self.status = 9
-            elif self.status == 8:
-                rospy.loginfo("到达手写数字识别区")
-                rospy.sleep(2)  # 原地待一会
+                self.move_base_client.send_goal(goal)
+                rospy.sleep(4)
+            #     if self.actuator_move(goal) == True:
+            #         self.status = 8
+            #     else:
+            #         rospy.loginfo("手写数字识别区失败")
+            #         self.status = 9
+            # elif self.status == 8:
+                rospy.loginfo("状态转移")
                 self.status = 10
 
 
@@ -168,6 +167,7 @@ class CarActuator(object):
                 goal.target_pose.header.frame_id = "map"
                 goal.target_pose.header.stamp = rospy.Time.now()
                 goal.target_pose.pose = point_special[0]
+    
                 if self.actuator_move(goal) == True:
                     self.status = 14
                 else:

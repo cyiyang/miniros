@@ -9,6 +9,7 @@ global_costmap:
   rolling_window: false #张聿璁加入的，是否在机器人移动过程中需要滚动窗口，始终保持机器人在当前窗口中心位置，一般false
   resolution: 0.05 #栅格地图的分辨率，该分辨率可以从加载的地图相对应的配置文件中获取到
 
+  # inflation_radius: 0.2  不理解这里加入在干吗
   transform_tolerance: 0.5 #坐标系间的转换可以忍受的最大延时
   plugins:
     - {name: static_layer,            type: "costmap_2d::StaticLayer"}

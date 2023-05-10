@@ -7,6 +7,7 @@ obstacle_layer: #障碍物层
  enabled: true # 启用障碍物层
  obstacle_range: 6.5 #设置机器人检测障碍物的最大范围
  raytrace_range: 6.0 #用来设置机器人检测自由空间的最大范围
+#  inflation_radius: 0.05不是很能理解这里膨胀半径在干吗
  track_unknown_space: false #代价值就只分为致命碰撞和自由区域两种
  combination_method: 1
  observation_sources: laser_scan_sensor #数据源

@@ -16,8 +16,8 @@ def doPrint(request):
     rospy.loginfo("车辆编号:%d,请求类型:%s",request.car_no,requestType_dic[request.request_type])
     if (request.request_type ==1):
         response.drug_location = random.randint(0, 2)  # 返回0-2的随机数，代表ABC
-        response.deliver_destination = random.randint(0, 3)  # 返回0-3的随机数，代表1-4送药点
-        temp = response.deliver_destination+1
+        response.deliver_destination = random.randint(1, 4)  # 返回0-3的随机数，代表1-4送药点
+        temp = response.deliver_destination
         rospy.loginfo("配药位置:%c,送药位置为:%d",
         responseToABC[response.drug_location],
         temp)

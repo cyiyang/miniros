@@ -7,25 +7,25 @@ TebLocalPlannerROS:
  teb_autosize: True #优化期间允许改变轨迹的时域长度
  dt_ref: 0.3  #change 局部路径规划的解析度，两个相邻位姿的时间
  dt_hysteresis: 0.1 #允许改变的时域解析度的浮动范围
- #min_samples: 3
+ min_samples: 3
  global_plan_overwrite_orientation: True #覆盖全局路径中局部路径点的朝向
  via_points_ordered: False #如果为真，规划器遵循存储容器中通过点的顺序
  global_plan_viapoint_sep: 5.0 # negative, do not use viapoints. positive, use them. the actual value does not matter
  # 修改下面这行
- max_global_plan_lookahead_dist: 0.75  #考虑优化的全局计划子集的最大长度 #向前规划最长距离 #太大路径不平滑，太小避障和转弯时效果不好，太小还会导致小车不敢走
-#  global_plan_prune_distance: 0.6
+ max_global_plan_lookahead_dist: 1  #考虑优化的全局计划子集的最大长度 #向前规划最长距离 #太大路径不平滑，太小避障和转弯时效果不好，太小还会导致小车不敢走
+ global_plan_prune_distance: 0.6
  force_reinit_new_goal_dist: 1.0 #change
  feasibility_check_no_poses: 3  #检测位姿可到达的时间间隔
  publish_feedback: false
  allow_init_with_backwards_motion: True  #允许在开始时向后退来执行轨迹
- exact_arc_length: False #change
+ exact_arc_length: False 
  shrink_horizon_backup: true
- #  shrink_horizon_min_duration: 10
+ shrink_horizon_min_duration: 10
 
  # Robot 机器人
 
 #
- max_vel_x: 0.6  #最大x向速度,
+ max_vel_x: 0.7  #最大x向速度,
  max_vel_y: 0.0  #最大y向速度，非全向为0
  max_vel_x_backwards: 0.6 #最大x后退速度
 
@@ -43,23 +43,26 @@ TebLocalPlannerROS:
  is_footprint_dynamic: False
 
  footprint_model: # types: "point", "circular", "two_circles", "line", "polygon"
-   type: "line"
-   line_start: [-0.1, 0.0] # for type "line"
-   line_end: [0.1, 0.0] # for type "line"
+  #  type: "line"
+  #  line_start: [-0.11, 0.0] # for type "line"
+  #  line_end: [0.11, 0.0] # for type "line"
+  type: "polygon"
+  vertices: [[-0.145,-0.11], [0.145,-0.11], [0.145,0.11], [-0.145,0.11]]
+
 
  # GoalTolerance 目标容忍度
 
- xy_goal_tolerance: 0.1  #目标xy偏移容忍度原来为0.2
+ xy_goal_tolerance: 0.075  #目标xy偏移容忍度原来为0.2
  yaw_goal_tolerance: 0.2   #目标角度容忍偏移度
  free_goal_vel: False   #允许机器人以最大速度到达目的地，这里要停稳，所以为false
 
  # Obstacles 障碍物
 
  min_obstacle_dist: 0.15 # 与障碍的最小期望距离
- inflation_dist : 0.08  # 障碍物周围缓冲区
- include_costmap_obstacles: True #
+ inflation_dist : 0  # 障碍物周围缓冲区，大于min_obstacle_dist才生效
+ include_costmap_obstacles: True #是否考虑局部costmap的障碍
  include_dynamic_obstacles: True
- costmap_obstacles_behind_robot_dist: 1.0 #
+ costmap_obstacles_behind_robot_dist: 1.0 #考虑后面n米内的障碍物
  dynamic_obstacle_inflation_dist: 0.3 #与动态障碍物缓冲区
  obstacle_poses_affected: 15 #
  costmap_converter_plugin: ""
@@ -81,10 +84,10 @@ TebLocalPlannerROS:
  weight_acc_lim_x: 1 #最大加速度权重0-1
  weight_acc_lim_theta: 1 #最大角加速度权重0-1
  weight_kinematics_nh: 1000 #满足非完整运动学的最优权重
- weight_kinematics_forward_drive: 900 #优化过程中，迫使机器人只选择前进方向
+ weight_kinematics_forward_drive: 750 #优化过程中，迫使机器人只选择前进方向
  weight_kinematics_turning_radius: 10.0 #在优化过程中，最小转弯半径的权重
  weight_optimaltime: 30  # 根据转换/执行时间对轨迹进行收缩的优化权重  #很重要的一个参数，值越大小车越大胆，转弯切内道，越容易拉到最大速度，也撞死得越快
- weight_obstacle: 100 #与障碍物最小距离的权重
+ weight_obstacle: 50 #与障碍物最小距离的权重
  weight_dynamic_obstacle: 100 # 在优化过程中，和动态障碍物最小距离的权重
  obstacle_cost_exponent: 4.0
  weight_adapt_factor: 1.0
