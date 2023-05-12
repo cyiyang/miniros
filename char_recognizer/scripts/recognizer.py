@@ -191,17 +191,17 @@ class CharRecognizer():
                 can_see = self.actuator_client.call(0).permission    # 向actuator请求“想看”
                 rospy.loginfo("[recognizer]已向actuator请求“想看”")
                 rospy.sleep(2)
-            rospy.loginfo("【recognizer】收到actuator回复“能看”")
+            rospy.loginfo("[recognizer]收到actuator回复“能看”")
             self.RecognizeHandler()    # “能看”以后开始识别
         return NeedToSeeMsgResponse(True)
 
     def RecognizeHandler(self):
         # Step1. 获取目标板照片
-        # temp_sub = rospy.Subscriber('/camera/rgb/image_raw', Image)  # 创建临时的照片订阅
-        # rospy.sleep(2)  # 延时2s, 等待相机自动曝光
-        # board_image = rospy.wait_for_message('/camera/rgb/image_raw', Image)  # 订阅一次照片
-        # temp_sub.unregister()   # 获取到照片后, 取消临时订阅
-        board_image = cv2.imread('/home/EPRobot/robot_ws/src/char_recognizer/board1_screen11.jpg')
+        temp_sub = rospy.Subscriber('/camera/rgb/image_raw', Image)  # 创建临时的照片订阅
+        rospy.sleep(2)  # 延时2s, 等待相机自动曝光
+        board_image = rospy.wait_for_message('/camera/rgb/image_raw', Image)  # 订阅一次照片
+        temp_sub.unregister()   # 获取到照片后, 取消临时订阅
+        # board_image = cv2.imread('/home/EPRobot/robot_ws/src/char_recognizer/board1_screen11.jpg')
         board_image = imutils.resize(board_image, width=1000)
         # Step2. 识别目标板字母
         charResult = self.actRecognizer.recognize(board_image)
