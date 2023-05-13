@@ -12,8 +12,10 @@ local_costmap:
   # 以下两行不用修改
   resolution: 0.05 #代价地图（滚动窗口）的分辨率，一般和地图设置一致
   transform_tolerance: 0.5 #局部代价地图中的坐标系之间转换的最大可忍受延时
+
   # cost_scaling_factor: 10
-  # inflation_radius: 0.2 不理解
+  # inflation_radius: 0.2 
+
   plugins: #改过了
    - {name: obstacle_layer,      type: "costmap_2d::ObstacleLayer"}
    - {name: inflation_layer,     type: "costmap_2d::InflationLayer"}
