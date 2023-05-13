@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 import imutils
 import cv_bridge
+import random
 from sensor_msgs.msg import Image
 from char_recognizer.srv import NeedToSeeMsg, NeedToSeeMsgResponse, DestinationMsg, PermissionMsg
 
@@ -132,6 +133,9 @@ class ActualCharRecognizer:
         :return: 识别结果(字母)
         '''
         image_gray = cv2.cvtColor(charImage, cv2.COLOR_BGR2GRAY)
+        black_ratio = float((image_gray < 128).sum()) / image_gray.size
+        if black_ratio < 0.17:
+            return ' '
         for tmpl_char in self.charTmplLib:
             tmpl = cv2.imread(tmpl_char[0])
             tmpl_gray = cv2.cvtColor(tmpl, cv2.COLOR_BGR2GRAY)
@@ -161,14 +165,15 @@ class ActualCharRecognizer:
         charImages = self.charDetect(charAprxes)
         charResult = ['', '', '', '']
         for i in range(4):
-            charResult[i] = self.tmplMatch(charImages[i], 0.7)  # [参数!]
+            char_single = self.tmplMatch(charImages[i], 0.8)  # [参数!]
+            charResult[i] = char_single
         return charResult
 
 class CharRecognizer():
     def __init__(self):
         rospy.init_node("char_recognizer")
         self.bridge = cv_bridge.CvBridge()  # 创建CV桥
-        self.actRecognizer = ActualCharRecognizer("/home/EPRobot/robot_ws/src/char_recognizer/template")  # 创建字母识别器(实际)
+        self.actRecognizer = ActualCharRecognizer("/home/EPRobot/drug-deliverer/char_recognizer/template")  # 创建字母识别器(实际)
         self.scheduler_client = rospy.ServiceProxy(
             "mission", DestinationMsg
         )   # 创建调度器请求客户
@@ -198,14 +203,17 @@ class CharRecognizer():
         return NeedToSeeMsgResponse(True)
 
     def RecognizeHandler(self):
+        rospy.loginfo("[recognizer]开始识别...")
         # Step1. 获取目标板照片
         temp_sub = rospy.Subscriber('/camera/rgb/image_raw', Image)  # 创建临时的照片订阅
         rospy.sleep(2)  # 延时2s, 等待相机自动曝光
         board_image = rospy.wait_for_message('/camera/rgb/image_raw', Image)  # 订阅一次照片
         temp_sub.unregister()   # 获取到照片后, 取消临时订阅
-        # board_image = cv2.imread('/home/EPRobot/robot_ws/src/char_recognizer/board1_screen11.jpg')
+        # board_image = cv2.imread("/home/EPRobot/drug-deliverer/char_recognizer/board1_screen1.jpg")
         board_image = self.bridge.imgmsg_to_cv2(board_image, 'bgr8')
         board_image = imutils.resize(board_image, width=1000)
+        image_name = '/home/EPRobot/drug-deliverer/char_recognizer/board1_image/board1_%s.jpg' %str(random.randint(1000, 9999))
+        cv2.imwrite(image_name, board_image)
         # Step2. 识别目标板字母
         charResult = self.actRecognizer.recognize(board_image)
         rospy.loginfo("[recognizer]识别成功, 结果: 1[%c] 2[%c] 3[%c] 4[%c]" %(charResult[0], charResult[1], charResult[2], charResult[3]))
