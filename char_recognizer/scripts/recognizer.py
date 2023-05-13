@@ -6,6 +6,7 @@ import glob
 import cv2
 import numpy as np
 import imutils
+import cv_bridge
 from sensor_msgs.msg import Image
 from char_recognizer.srv import NeedToSeeMsg, NeedToSeeMsgResponse, DestinationMsg, PermissionMsg
 
@@ -166,6 +167,7 @@ class ActualCharRecognizer:
 class CharRecognizer():
     def __init__(self):
         rospy.init_node("char_recognizer")
+        self.bridge = cv_bridge.CvBridge()  # 创建CV桥
         self.actRecognizer = ActualCharRecognizer("/home/EPRobot/robot_ws/src/char_recognizer/template")  # 创建字母识别器(实际)
         self.scheduler_client = rospy.ServiceProxy(
             "mission", DestinationMsg
@@ -202,6 +204,7 @@ class CharRecognizer():
         board_image = rospy.wait_for_message('/camera/rgb/image_raw', Image)  # 订阅一次照片
         temp_sub.unregister()   # 获取到照片后, 取消临时订阅
         # board_image = cv2.imread('/home/EPRobot/robot_ws/src/char_recognizer/board1_screen11.jpg')
+        board_image = self.bridge.imgmsg_to_cv2(board_image, 'bgr8')
         board_image = imutils.resize(board_image, width=1000)
         # Step2. 识别目标板字母
         charResult = self.actRecognizer.recognize(board_image)
