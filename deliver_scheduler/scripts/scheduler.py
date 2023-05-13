@@ -97,6 +97,10 @@ class Scheduler:
                 "deliverDestination": deliverDestination,
                 "elapsedTime": 0,
             }
+            for item in self.queue:
+                if item["requestType"]==requestDetail["requestType"] and item["deliverDestination"]==requestDetail["deliverDestination"]:
+                    # 如果两个字段与已有内容完全相同，表明是上一轮遗留的任务
+                    return
             self.queue.append(requestDetail)
 
     def UpdateRequestPeriod(self):
