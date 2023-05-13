@@ -34,23 +34,29 @@ class Scheduler:
             "deliverDestination": None,
         }
 
-        self.__threads = []
-        self.__threads.append(
-            threading.Thread(target=self.__DrugTracerMain, args=("A"))
-        )
-        self.__threads.append(
-            threading.Thread(target=self.__DrugTracerMain, args=("B"))
-        )
-        self.__threads.append(
-            threading.Thread(target=self.__DrugTracerMain, args=("C"))
-        )
+        # self.__threads = []
+        # self.__threads.append(
+        #     threading.Thread(target=self.__DrugTracerMain, args=("A"))
+        # )
+        # self.__threads.append(
+        #     threading.Thread(target=self.__DrugTracerMain, args=("B"))
+        # )
+        # self.__threads.append(
+        #     threading.Thread(target=self.__DrugTracerMain, args=("C"))
+        # )
 
-        self.running = True
-        for thread in self.__threads:
-            thread.start()
-        # 等待线程结束
+        # self.running = True
+        # for thread in self.__threads:
+        #     thread.start()
 
-    def GetNextTarget(self):
+        self.timers = [
+            ReloadableTimer(interval, True, self.__UpdateRemainDrug, [drugType, 1])
+            for drugType, interval in self.drugSupplementInterval.items()
+        ]
+        for timer in self.timers:
+            timer.start()
+
+    def GetNextTarget(self, car_id=0):
         """获取下个目标
 
         Returns:
@@ -98,7 +104,11 @@ class Scheduler:
                 "elapsedTime": 0,
             }
             for item in self.queue:
-                if item["requestType"]==requestDetail["requestType"] and item["deliverDestination"]==requestDetail["deliverDestination"]:
+                if (
+                    item["requestType"] == requestDetail["requestType"]
+                    and item["deliverDestination"]
+                    == requestDetail["deliverDestination"]
+                ):
                     # 如果两个字段与已有内容完全相同，表明是上一轮遗留的任务
                     return
             self.queue.append(requestDetail)
@@ -118,7 +128,7 @@ class Scheduler:
         # 此处不能加锁，否则在 GetNextTarget 中调用该函数时会导致死锁；因此将该方法变成私有方法
         self.queue.sort(key=lambda x: x["priority"], reverse=True)
 
-    def DrugLoaded(self):
+    def DrugLoaded(self, carID=0):
         """当小车拾取药物，调用该函数。该函数会将nextTarget对应的剩余药物量-1"""
         self.__UpdateRemainDrug(self.nextTarget["requestType"], -1)
 
@@ -141,8 +151,11 @@ class Scheduler:
         """返回当前优先级队列信息，包括需求类型和配送目的地"""
         res = []
         with self.queueLock:
-            for item in self.queue:
-                res.append((item["requestType"], item["deliverDestination"]))
+            res = [
+                (item["requestType"], item["deliverDestination"]) for item in self.queue
+            ]
+            # for item in self.queue:
+            #     res.append((item["requestType"], item["deliverDestination"]))
         return res
 
     def Terminate(self):
@@ -158,3 +171,51 @@ class RequestType(Enum):
 
 
 TargetStatus = Enum("TargetStatus", ("SUCCESS", "NO_DRUG_REMAIN", "NO_MORE_REQUEST"))
+
+
+class ReloadableTimer:
+    def __init__(self, interval, autoReload, function, args=[], kwargs={}):
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        self.thread = None
+        self.running = False
+        self.startTime = None
+        self.autoReload = autoReload
+
+    def start(self):
+        self.running = True
+        self.startTime = time.monotonic()
+        self.thread = threading.Timer(self.interval, self._run)
+        self.thread.start()
+
+    def _run(self):
+        self.running = False
+        self.startTime = None
+        threading.Thread(target=self.function(*self.args, **self.kwargs)).start()
+        if self.autoReload:
+            self.restart(self.interval)
+
+    def stop(self):
+        self.thread.cancel()
+        self.running = False
+
+    def restart(self, interval=None):
+        if interval is not None:
+            self.interval = interval
+        self.stop()
+        self.start()
+
+    def isAlive(self):
+        return self.thread and self.running
+
+    def getElapsedTime(self):
+        if not self.startTime:
+            return None
+        return time.monotonic() - self.startTime
+
+    def getRemainTime(self):
+        if not self.startTime:
+            return None
+        return max(0, self.interval - self.getElapsedTime())
