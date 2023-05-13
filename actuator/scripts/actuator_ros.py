@@ -83,7 +83,7 @@ class CarActuator(object):
 
         point_special = list()
         point_special.append(Pose(Point(0, 0, 0), quaternions[8]))  # 起点
-        point_special.append(Pose(Point(-0.8, 3.7, 0), quaternions[9]))  # 手写数字识别点
+        point_special.append(Pose(Point(-0.4, 3.7, 0), quaternions[9]))  # 手写数字识别点
 
         rospy.loginfo("特殊点创建成功")
 
