@@ -13,8 +13,9 @@ roslaunch robot_navigation navigation_rviz.launch
  * roslaunch robot_navigation robot_navigation.launch
  * roslaunch actuator car.launch 
  * roslaunch char_recognizer char_recognizer_launch.launch 
- * roslaunch board_reminder board_reminder_launch.launch 
  * roslaunch deliver_scheduler scheduler.launch 
+ * roslaunch board_reminder board_reminder_launch.launch 
+
 
 
 # map参数
