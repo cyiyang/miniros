@@ -130,14 +130,14 @@ class CarActuator(object):
                 goal.target_pose.header.frame_id = "map"
                 goal.target_pose.header.stamp = rospy.Time.now()
                 goal.target_pose.pose = point_special[1]
-                self.move_base_client.send_goal(goal)
-                rospy.sleep(4)
-            #     if self.actuator_move(goal) == True:
-            #         self.status = 8
-            #     else:
-            #         rospy.loginfo("手写数字识别区失败")
-            #         self.status = 9
-            # elif self.status == 8:
+                #self.move_base_client.send_goal(goal)
+                #rospy.sleep(4)
+                if self.actuator_move(goal) == True:
+                    self.status = 8
+                else:
+                    rospy.loginfo("手写数字识别区失败")
+                    self.status = 9
+            elif self.status == 8:
                 rospy.loginfo("状态转移")
                 self.status = 10
 

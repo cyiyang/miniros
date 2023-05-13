@@ -10,11 +10,12 @@ roslaunch robot_navigation navigation_rviz.launch
 * 车不动调参
 修改move_base.launch文件，将cmd_vel话题重命名（打开文件一看就懂）
 * 编写的功能包
+ * roslaunch astra_camera astra.launch
  * roslaunch robot_navigation robot_navigation.launch
- * roslaunch actuator car.launch 
- * roslaunch char_recognizer char_recognizer_launch.launch 
- * roslaunch board_reminder board_reminder_launch.launch 
- * roslaunch deliver_scheduler scheduler.launch 
+ * roslaunch actuator car.launch
+ * roslaunch char_recognizer char_recognizer_launch.launch
+ * roslaunch deliver_scheduler scheduler.launch
+ * roslaunch board_reminder board_reminder_launch.launch
 
 
 # map参数
