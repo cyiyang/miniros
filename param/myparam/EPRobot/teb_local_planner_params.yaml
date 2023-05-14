@@ -12,7 +12,7 @@ TebLocalPlannerROS:
  via_points_ordered: False #如果为真，规划器遵循存储容器中通过点的顺序
  global_plan_viapoint_sep: 5.0 # negative, do not use viapoints. positive, use them. the actual value does not matter
  # 修改下面这行
- max_global_plan_lookahead_dist: 1  #考虑优化的全局计划子集的最大长度 #向前规划最长距离 #太大路径不平滑，太小避障和转弯时效果不好，太小还会导致小车不敢走
+ max_global_plan_lookahead_dist: 1.5  #考虑优化的全局计划子集的最大长度 #向前规划最长距离 #太大路径不平滑，太小避障和转弯时效果不好，太小还会导致小车不敢走
  global_plan_prune_distance: 0.6
  force_reinit_new_goal_dist: 1.0 #change
  feasibility_check_no_poses: 3  #检测位姿可到达的时间间隔
@@ -25,11 +25,11 @@ TebLocalPlannerROS:
  # Robot 机器人
 
 #
- max_vel_x: 0.7  #最大x向速度,
+ max_vel_x: 1.0  #最大x向速度,
  max_vel_y: 0.0  #最大y向速度，非全向为0
- max_vel_x_backwards: 0.6 #最大x后退速度
+ max_vel_x_backwards: 0.8 #最大x后退速度
 
- max_vel_theta: 0.8 # the angular velocity is also bounded by min_turning_radius in case of a carlike robot (r = v / omega)
+ max_vel_theta: 1.5 # the angular velocity is also bounded by min_turning_radius in case of a carlike robot (r = v / omega)
  acc_lim_x: 0.1  #最大x加速度
  acc_lim_y: 0  #最大y向加速度，非全向移动小车需要设置为0
  acc_lim_theta: 0.4  #最大角加速度
@@ -52,7 +52,7 @@ TebLocalPlannerROS:
 
  # GoalTolerance 目标容忍度
 
- xy_goal_tolerance: 0.075  #目标xy偏移容忍度原来为0.2
+ xy_goal_tolerance: 0.1  #目标xy偏移容忍度原来为0.2
  yaw_goal_tolerance: 0.2   #目标角度容忍偏移度
  free_goal_vel: False   #允许机器人以最大速度到达目的地，这里要停稳，所以为false
 
