@@ -40,8 +40,6 @@ class CarActuator(object):
         self.mission_client.wait_for_service()
         rospy.loginfo("连上调度器服务器了")
 
-
-
         self.announcer = Announcer()
         rospy.loginfo("Music on!!!")
 
@@ -101,7 +99,6 @@ class CarActuator(object):
                 self.status = 4
             elif self.status == 3:
                 rospy.loginfo("请求失败")
-                rospy.sleep(5)
                 self.actuator_ask_newtarget()
 
             # 取药相关
@@ -120,7 +117,6 @@ class CarActuator(object):
                 newABC = self.responseToABC[self.mission_response.drug_location]
                 rospy.loginfo("到达取药区%c", newABC)
                 self.actuator_updateABC()  # 上报
-                rospy.sleep(2)  # 原地待一会
                 self.status = 7
 
             # 手写数字相关,不处理手写数字，不停车
@@ -130,17 +126,16 @@ class CarActuator(object):
                 goal.target_pose.header.frame_id = "map"
                 goal.target_pose.header.stamp = rospy.Time.now()
                 goal.target_pose.pose = point_special[1]
-                #self.move_base_client.send_goal(goal)
-                #rospy.sleep(4)
-                if self.actuator_move(goal) == True:
-                    self.status = 8
-                else:
-                    rospy.loginfo("手写数字识别区失败")
-                    self.status = 9
-            elif self.status == 8:
+                self.move_base_client.send_goal(goal)
+                rospy.sleep(4)
+            #     if self.actuator_move(goal) == True:
+            #         self.status = 8
+            #     else:
+            #         rospy.loginfo("手写数字识别区失败")
+            #         self.status = 9
+            # elif self.status == 8:
                 rospy.loginfo("状态转移")
                 self.status = 10
-
 
             # 送药相关
             elif self.status == 10:
@@ -157,7 +152,6 @@ class CarActuator(object):
             elif self.status == 11:
                 rospy.loginfo("到达送药区%d",self.mission_response.deliver_destination)
                 self.actuator_update1234()
-                rospy.sleep(2)  # 原地待一会
                 self.status = 13
 
             # 起点相关
@@ -278,9 +272,6 @@ class CarActuator(object):
 if __name__ == "__main__":
     try:
         CarActuator()
-        
     except rospy.ROSInterruptException:
         rospy.loginfo("程序意外退出")
-        # except KeyboardInterrupt:
-        #     rospy.loginfo("程序被键盘打断")
         pass
