@@ -64,6 +64,7 @@ add_service_files(
   FILES
   DestinationMsg.srv
   PermissionMsg.srv
+  ChangeTimerResult.srv
 )
 
 ## Generate actions in the 'action' folder
