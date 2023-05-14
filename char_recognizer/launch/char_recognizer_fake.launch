@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="char_recognizer" type="recognizer.py" name="char_recognizer" output="screen" args="--use_fake_img 1"/>
+</launch>
