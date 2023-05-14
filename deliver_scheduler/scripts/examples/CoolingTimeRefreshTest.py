@@ -11,12 +11,14 @@ import os
 os.chdir(os.path.dirname(__file__))
 import time
 
-from scheduler import Scheduler
+from scheduler import Scheduler, NeedToChangeStatus
 
 if __name__ == "__main__":
     scheduler = Scheduler(DEBUG=True)
     scheduler.GetNewRequest("A", 1)
     nextTarget, _ = scheduler.GetNextTarget()
+    needToChange = scheduler.GetNeedToChangeStatus()
+    assert needToChange == NeedToChangeStatus.DONT_CHANGE.value
     scheduler.DrugLoaded()
     time.sleep(5)
     scheduler.Delivered()
@@ -27,7 +29,10 @@ if __name__ == "__main__":
     # 药物A无剩余，此时应该取药物B
     assert nextTarget["requestType"] == "B" and nextTarget["deliverDestination"] == 2
 
-    time.sleep(8)
+    needToChange = scheduler.GetNeedToChangeStatus()
+    assert needToChange == NeedToChangeStatus.SPEED_UP.value
+    time.sleep(1)
+    assert scheduler.UpdateDrugCoolingTime(NeedToChangeStatus.SPEED_UP.value)
     # 等待药物A补充，同时送达当前药物
     scheduler.Delivered()
     scheduler.GetNewRequest("B", 3)

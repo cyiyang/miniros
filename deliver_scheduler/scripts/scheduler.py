@@ -3,13 +3,16 @@ import threading
 import time
 from enum import Enum, unique
 
+from statemachine import State, StateMachine
+from statemachine.exceptions import TransitionNotAllowed
+
 
 class Scheduler:
     """
     调度器对象
     """
 
-    def __init__(self):
+    def __init__(self, DEBUG=False):
         """
         queue中的元素为一字典,具有字段:
         priority: 搬运的优先级，为关于targetType和elapsedTime的函数
@@ -27,7 +30,10 @@ class Scheduler:
         self.drugRemainLock = threading.Lock()
 
         # self.drugSupplementInterval = {"A": 120, "B": 60, "C": 40}
-        self.drugSupplementInterval = {"A": 120, "B": 60, "C": 40}
+        if DEBUG:
+            self.drugSupplementInterval = {"A": 12, "B": 6, "C": 4}
+        else:
+            self.drugSupplementInterval = {"A": 120, "B": 60, "C": 40}
 
         self.__noTarget = {
             "requestType": None,
@@ -48,6 +54,8 @@ class Scheduler:
         # self.running = True
         # for thread in self.__threads:
         #     thread.start()
+
+        self.coolingTimeStateMachine = CoolingTime()
 
         self.timers = [
             ReloadableTimer(interval, True, self.__UpdateRemainDrug, [drugType, 1])
@@ -113,13 +121,6 @@ class Scheduler:
                     return
             self.queue.append(requestDetail)
 
-    def UpdateRequestPeriod(self):
-        """
-        获取是否需要调整取药周期
-        """
-        # To be implemented
-        return False
-
     def __UpdatePriority(self, timeNow=time.time()):
         """
         周期性运行，更新队伍中优先级
@@ -161,6 +162,52 @@ class Scheduler:
     def Terminate(self):
         self.running = False
 
+    def GetNeedToChangeStatus(self):
+        """获取当前是否需要修改配送周期"""
+        with self.queueLock:
+            for request in self.queue:
+                if request["requestType"] == "A":
+                    haveRequestForA = True
+            if self.GetRemainDrug("A") <= 0:
+                noRemainForA = True
+            if self.GetRemainDrug("B") >= 3:
+                overflowForB = True
+            if self.GetRemainDrug("C") >= 3:
+                overflowForC = True
+        if haveRequestForA and noRemainForA:
+            return NeedToChangeStatus.SPEED_UP.value
+        elif not noRemainForA and (overflowForB or overflowForC):
+            # B或C发生堆积而且A有剩余时，应减缓药物刷新
+            return NeedToChangeStatus.SLOW_DOWN.value
+        else:
+            return NeedToChangeStatus.DONT_CHANGE.value
+
+    def UpdateDrugCoolingTime(self, needToChangeStatus):
+        """在正确识别手写数字后，更新药物的刷新时间
+        @needToChangeStatus: 修改刷新时间的方向，可以为 DONT_CHANGE, SPEED_UP, SLOW_DOWN
+        @return: True, 当转换成功; False, 当转换失败
+        """
+        if needToChangeStatus == NeedToChangeStatus.DONT_CHANGE.value:
+            return True
+        if needToChangeStatus == NeedToChangeStatus.SPEED_UP.value:
+            try:
+                self.coolingTimeStateMachine.send("SPEED_UP")
+            except TransitionNotAllowed:
+                print("不允许的状态转换!")
+                return False
+            for timer in self.timers:
+                timer.setRemainTime(timer.getRemainTime() / 2)
+                timer.setNewInterval(timer.getReloadInterval() / 2)
+        elif needToChangeStatus == NeedToChangeStatus.SLOW_DOWN.value:
+            try:
+                self.coolingTimeStateMachine.send("SLOW_DOWN")
+            except TransitionNotAllowed:
+                print("不允许的状态转换!")
+                return False
+            for timer in self.timers:
+                timer.setRemainTime(timer.getRemainTime() * 2)
+                timer.setNewInterval(timer.getReloadInterval() / 2)
+
 
 @unique
 class RequestType(Enum):
@@ -176,6 +223,7 @@ TargetStatus = Enum("TargetStatus", ("SUCCESS", "NO_DRUG_REMAIN", "NO_MORE_REQUE
 class ReloadableTimer:
     def __init__(self, interval, autoReload, function, args=[], kwargs={}):
         self.interval = interval
+        self.reloadInterval = interval
         self.function = function
         self.args = args
         self.kwargs = kwargs
@@ -186,8 +234,10 @@ class ReloadableTimer:
 
     def start(self):
         self.running = True
-        self.startTime = time.monotonic()
+        self.startTime = time.time()
         self.thread = threading.Timer(self.interval, self._run)
+        # setDaemon(True) 后，当主线程退出时，其他定时器线程也将退出
+        self.thread.setDaemon(True)
         self.thread.start()
 
     def _run(self):
@@ -195,27 +245,59 @@ class ReloadableTimer:
         self.startTime = None
         threading.Thread(target=self.function(*self.args, **self.kwargs)).start()
         if self.autoReload:
-            self.restart(self.interval)
+            # 自动重载会以 self.reloadInterval 指定的间隔进行
+            self.restart(self.reloadInterval)
 
     def stop(self):
         self.thread.cancel()
         self.running = False
 
     def restart(self, interval=None):
+        """使得定时器的剩余时间为 interval，但不影响定时器的重载值"""
         if interval is not None:
             self.interval = interval
-        self.stop()
+        if self.thread is not None:
+            self.stop()
         self.start()
 
     def isAlive(self):
         return self.thread and self.running
 
     def getElapsedTime(self):
+        """若没有执行过 setRemainTime, 该方法会返回start后的时间，否则会返回上一次 setRemainTime 后经过的时间"""
         if not self.startTime:
             return None
-        return time.monotonic() - self.startTime
+        return time.time() - self.startTime
 
     def getRemainTime(self):
+        """返回本次定时剩余的时间, 如果定时器没有启动，则会返回 None"""
         if not self.startTime:
             return None
         return max(0, self.interval - self.getElapsedTime())
+
+    def setRemainTime(self, remainTime):
+        """临时修改定时器的剩余时间，本轮定时器超时后，将按原有的周期继续运行"""
+        self.restart(remainTime)
+
+    def setNewInterval(self, newInterval):
+        """修改下一周期开始的定时周期，不会影响当前周期的剩余时间"""
+        self.reloadInterval = newInterval
+
+    def getReloadInterval(self):
+        return self.reloadInterval
+
+
+NeedToChangeStatus = Enum(
+    "NeedToChangeStatus", ("SPEED_UP", "DONT_CHANGE", "SLOW_DOWN")
+)
+
+
+class CoolingTime(StateMachine):
+    # 定义状态
+    speedUpState = State("speedUp")
+    slowDownState = State("slowDown")
+    normalState = State("normal", initial=True)
+
+    # 定义状态转换
+    speedUp = slowDownState.to(normalState) | normalState.to(speedUpState)
+    slowDown = speedUpState.to(normalState) | normalState.to(slowDownState)

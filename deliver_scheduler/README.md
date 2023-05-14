@@ -20,3 +20,10 @@ int8 deliver_destination
 | `request_deliver_destination` | 识别到的药物配送目的地 | 当 `request_type = 0` 时，该字段为识别到的新的配送目的地；否则该字段为任意 `int8`                                              |
 
 仅当 `request_type = 1` 时，返回值才有意义。 `drug_location` 为需求药物类型，三种药物被编码为 0,1,2. `deliver_destination` 为送药地点。当 `request_type` 不为 1 时，以上两个字段的值均为 -1.
+
+## 依赖
+依赖于 `python-statemachine`, 由于小车运行 Python 2.7, 因此只能安装 1.0.1 版本。
+
+使用 `pip install python-statemachine==1.0.0` 安装。
+
+若在 import 时出现报错，提示 `ImportError: No module named typing`, 则需要更新 pip 后安装 typing 库。
