@@ -14,7 +14,8 @@ import sys
 from math import pi
 from Announcer import Announcer
 import threading
-from std_msgs import Int16
+from std_msgs.msg import Int16
+from playsound import playsound
 
 def thread_CV():
     rospy.spin()
@@ -22,6 +23,10 @@ def thread_CV():
 # def thread_SCH():
 #     rospy.spin()
 
+def thread_Broadcast(self):
+    while not rospy.is_shutdown():
+        self.location_pub.publish(self.status) #广播位置
+        rospy.sleep(2)
 
 class CarActuator(object):
     def __init__(self):
@@ -56,10 +61,6 @@ class CarActuator(object):
         self.mission_request = DestinationMsgRequest()  # 定义请求
         self.mission_request.car_no = int(sys.argv[1])  # 设定编号
 
-        # self.changetime_flag = 0  #修改时间标志位，0不修改，1修改
-        # self.changetime_count = 0 #修改时间计数器
-        # self.changetime_req
-
         self.responseToABC = {-1:'E',0: 'A', 1: 'B', 2: 'C'}
         quaternions = list()
         euler_angles = (
@@ -82,14 +83,14 @@ class CarActuator(object):
         # 创建特殊点列表
         point_ABC = list()
         point_ABC.append(Pose(Point(0.45, 2.3, 0), quaternions[0]))  # A点
-        point_ABC.append(Pose(Point(1.28, 2.73, 0), quaternions[1]))  # B点
+        point_ABC.append(Pose(Point(1.28, 2.75, 0), quaternions[1]))  # B点
         point_ABC.append(Pose(Point(1.28, 1.80, 0), quaternions[2]))  # C点
 
         point_1234 = list()
         point_1234.append(Pose(Point(0,0,0), quaternions[3]))           #特殊点保护
-        point_1234.append(Pose(Point(-1.85, 2.32, 0), quaternions[4]))  # 1点
-        point_1234.append(Pose(Point(-1.03, 1.80, 0), quaternions[5]))  # 2点
-        point_1234.append(Pose(Point(-1.88, 1.28, 0), quaternions[6]))  # 3点
+        point_1234.append(Pose(Point(-1.85, 2.25, 0), quaternions[4]))  # 1点
+        point_1234.append(Pose(Point(-1.03, 1.75, 0), quaternions[5]))  # 2点
+        point_1234.append(Pose(Point(-1.88, 1.33, 0), quaternions[6]))  # 3点
         point_1234.append(Pose(Point(-1.03, 0.88, 0), quaternions[7]))  # 4点
 
         point_special = list()
@@ -102,13 +103,11 @@ class CarActuator(object):
         add_thread.start()
         rospy.loginfo("deal CV thread OK")
 
-        # add_thread = threading.Thread(target=thread_SCH)
-        # add_thread.start()
-        # rospy.loginfo("deal SCH thread OK")
+        add_thread = threading.Thread(target=thread_Broadcast)
+        add_thread.start()
+        rospy.loginfo("Broadcast thread OK")
 
         while not rospy.is_shutdown():
-
-            self.location_pub.publish(self.status) #广播位置
             # 请求任务相关
             if self.status == 1:
                 rospy.loginfo("请求新任务")
@@ -159,7 +158,7 @@ class CarActuator(object):
                 #         self.status = 9
                 # else: #不需要修改，那就用牵引法
                 self.move_base_client.send_goal(goal)
-                rospy.sleep(3)
+                rospy.sleep(4)
                 rospy.loginfo("不修改，状态转移")
                 self.status = 10
 
@@ -234,14 +233,16 @@ class CarActuator(object):
 
     # 向服务器上报已取药
     def actuator_updateABC(self):
-        self.announcer.arriveDispensingPoint()
+        # self.announcer.arriveDispensingPoint()
+        playsound("/home/EPRobot/Music/dispense.mp3")
         self.mission_request.request_type = 2  # 请求包编号为“完成配药/ABC”
         self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
         
  
     # 向服务器上报已送药
     def actuator_update1234(self):
-        self.announcer.arrivePickUpPoint()
+        # self.announcer.arrivePickUpPoint()
+        playsound("/home/EPRobot/Music/pick_up.mp3")
         self.mission_request.request_type = 3  # 请求包编号为“完成送药/1234”
         self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
        

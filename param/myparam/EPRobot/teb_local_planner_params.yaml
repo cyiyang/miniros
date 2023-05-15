@@ -53,7 +53,7 @@ TebLocalPlannerROS:
  # GoalTolerance 目标容忍度
 
  xy_goal_tolerance: 0.1  #目标xy偏移容忍度
- yaw_goal_tolerance: 0.45   #目标角度容忍偏移度,尝试修复Clearing costmap to unstuck robot 问题
+ yaw_goal_tolerance: 0.35   #目标角度容忍偏移度,尝试修复Clearing costmap to unstuck robot 问题
  #解决方法来自https://github.com/pal-robotics/tiago_navigation/issues/7，原来为0.2
  free_goal_vel: False   #允许机器人以最大速度到达目的地，这里要停稳，所以为false
 
