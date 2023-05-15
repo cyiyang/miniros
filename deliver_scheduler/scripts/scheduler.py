@@ -165,11 +165,14 @@ class Scheduler:
     def GetNeedToChangeStatus(self):
         """获取当前是否需要修改配送周期"""
         with self.queueLock:
+            haveRequestForA = False
             for request in self.queue:
                 if request["requestType"] == "A":
                     haveRequestForA = True
             if self.GetRemainDrug("A") <= 0:
                 noRemainForA = True
+            else:
+                noRemainForA = False
             if self.GetRemainDrug("B") >= 3:
                 overflowForB = True
             if self.GetRemainDrug("C") >= 3:
