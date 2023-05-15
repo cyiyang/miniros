@@ -59,6 +59,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   DestinationMsg.srv
+  ChangeTimeResult.srv
 )
 
 ## Generate actions in the 'action' folder
