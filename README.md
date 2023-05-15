@@ -13,10 +13,11 @@ roslaunch robot_navigation navigation_rviz.launch
  * roslaunch astra_camera astra.launch
  * roslaunch robot_navigation robot_navigation.launch
  * roslaunch actuator car0.launch #主车
+ * roslaunch actuator car1.launch #从车
  * roslaunch char_recognizer char_recognizer.launch         # 真图
  * roslaunch char_recognizer char_recognizer_fake.launch    # 假图
  * roslaunch deliver_scheduler scheduler.launch
- * roslaunch board_reminder board_reminder_launch.launch
+ * roslaunch board_reminder board_reminder.launch
 
 
 # map参数

@@ -8,7 +8,7 @@
 # rsync -av --delete /home/$(whoami)/drug-deliverer/board_reminder/ /home/$(whoami)/robot_ws/src/board_reminder/
 
 # 从git同步到小车
-ping -c 1 EPRobot > /dev/null
+ping -c 1 EPRobot0 > /dev/null
 
 if [ $? -eq 0 ]; then
     rsync -av --delete /home/$(whoami)/drug-deliverer/actuator/ EPRobot@EPRobot:/home/EPRobot/robot_ws/src/actuator/
@@ -27,9 +27,6 @@ ping -c 1 EPRobot1 > /dev/null
 
 if [ $? -eq 0 ]; then
     rsync -av --delete /home/$(whoami)/drug-deliverer/actuator/ EPRobot@EPRobot1:/home/EPRobot/robot_ws/src/actuator/
-    rsync -av --delete /home/$(whoami)/drug-deliverer/deliver_scheduler/ EPRobot@EPRobot1:/home/EPRobot/robot_ws/src/deliver_scheduler/
-    rsync -av --delete /home/$(whoami)/drug-deliverer/board_reminder/ EPRobot@EPRobot1:/home/EPRobot/robot_ws/src/board_reminder/
-    rsync -av --delete /home/$(whoami)/drug-deliverer/char_recognizer/ EPRobot@EPRobot1:/home/EPRobot/robot_ws/src/char_recognizer/
     rsync -av --delete /home/$(whoami)/drug-deliverer/param/myparam/ EPRobot@EPRobot1:/home/EPRobot/robot_ws/src/robot_navigation/param/
     rsync -av --delete /home/$(whoami)/drug-deliverer/send_goals/ EPRobot@EPRobot1:/home/EPRobot/robot_ws/src/send_goals/
     echo "[副车]成功将本地drug-deliverer仓库的修改同步到小车的工作空间"
