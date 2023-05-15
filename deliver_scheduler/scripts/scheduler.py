@@ -175,6 +175,8 @@ class Scheduler:
         """获取当前是否需要修改配送周期"""
         with self.queueLock:
             haveRequestForA = False
+            overflowForB = False
+            overflowForC = False
             for request in self.queue:
                 if request["requestType"] == "A":
                     haveRequestForA = True
@@ -186,9 +188,9 @@ class Scheduler:
                 overflowForB = True
             if self.GetRemainDrug("C") >= 3:
                 overflowForC = True
-        if haveRequestForA and noRemainForA:
+        if haveRequestForA and noRemainForA and self.coolingTimeStateMachine.current_state!="speedUpState":
             return NeedToChangeStatus.SPEED_UP.value
-        elif not noRemainForA and (overflowForB or overflowForC):
+        elif (not noRemainForA) and (overflowForB or overflowForC) and self.coolingTimeStateMachine.current_state!="slowDownState":
             # B或C发生堆积而且A有剩余时，应减缓药物刷新
             return NeedToChangeStatus.SLOW_DOWN.value
         else:
