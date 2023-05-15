@@ -36,27 +36,53 @@ if __name__ == "__main__":
     time.sleep(3)
     scheduler.DrugLoaded()
     assert scheduler.GetRemainDrug("A") == 0
-    time.sleep(1)
+    time.sleep(2)
     assert scheduler.GetNeedToChangeStatus() == NeedToChangeStatus.SPEED_UP.value
     scheduler.UpdateDrugCoolingTime(NeedToChangeStatus.SPEED_UP.value)
-    time.sleep(5)
+    print(
+        scheduler.timers[0].getRemainTime(),
+        scheduler.timers[1].getRemainTime(),
+        scheduler.timers[2].getRemainTime(),
+    )
+    time.sleep(3.1)
     scheduler.Delivered()
-    assert scheduler.GetRemainDrug("B") == 5 and scheduler.GetRemainDrug("C") == 7
-    time.sleep(2)
+    assert (
+        scheduler.GetRemainDrug("A") == 1
+        and scheduler.GetRemainDrug("B") == 5
+        and scheduler.GetRemainDrug("C") == 7
+    )
+    time.sleep(3)
     assert scheduler.GetNeedToChangeStatus() == NeedToChangeStatus.SLOW_DOWN.value
     scheduler.GetNewRequest("C", 1)
     nextTarget, _ = scheduler.GetNextTarget()
-    assert nextTarget["requestType"] == "A" and (
-        nextTarget["deliverDestination"] == 4 or nextTarget["deliverDestination"] == 2
+    assert nextTarget["requestType"] == "A" and nextTarget["deliverDestination"] == 4
+    assert (
+        scheduler.GetRemainDrug("A") == 1
+        and scheduler.GetRemainDrug("B") == 6
+        and scheduler.GetRemainDrug("C") == 8
     )
-    time.sleep(6)
+    print(
+        scheduler.timers[0].getRemainTime(),
+        scheduler.timers[1].getRemainTime(),
+        scheduler.timers[2].getRemainTime(),
+    )
+    time.sleep(3)
     scheduler.DrugLoaded()
-    assert scheduler.GetRemainDrug("B") == 8
+    assert (
+        scheduler.GetRemainDrug("A") == 1
+        and scheduler.GetRemainDrug("B") == 7
+        and scheduler.GetRemainDrug("C") == 10
+    )
     time.sleep(1)
     assert scheduler.GetNeedToChangeStatus() == NeedToChangeStatus.SLOW_DOWN.value
     scheduler.UpdateDrugCoolingTime(NeedToChangeStatus.SLOW_DOWN.value)
-    time.sleep(8)
-    assert scheduler.GetRemainDrug("B") == 10 and scheduler.GetRemainDrug("C") == 13
+    time.sleep(4)
+    scheduler.Delivered()
+    assert (
+        scheduler.GetRemainDrug("A") == 1
+        and scheduler.GetRemainDrug("B") == 8
+        and scheduler.GetRemainDrug("C") == 11
+    )
 
     # scheduler.GetNewRequest("A", 1)
     # nextTarget, _ = scheduler.GetNextTarget()

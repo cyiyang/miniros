@@ -206,8 +206,8 @@ class Scheduler:
                     raise ValueError("不允许的状态转换!")
                 return False
             for timer in self.timers:
-                timer.setRemainTime(timer.getRemainTime() / 2)
-                timer.setNewInterval(timer.getReloadInterval() / 2)
+                timer.setRemainTime(timer.getRemainTime() / 2.0)
+                timer.setNewInterval(timer.getReloadInterval() / 2.0)
         elif needToChangeStatus == NeedToChangeStatus.SLOW_DOWN.value:
             try:
                 self.coolingTimeStateMachine.send("SLOW_DOWN")
