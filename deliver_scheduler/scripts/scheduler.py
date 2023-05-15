@@ -25,6 +25,7 @@ class Scheduler:
         self.CAR_CNT = 2
         self.nextTarget = [None] * self.CAR_CNT
         self.queueLock = threading.Lock()  # May be implemented
+        self.DEBUG = DEBUG
 
         # 起始时三种药各有一瓶
         self.drugRemain = {"A": 1, "B": 1, "C": 1}
@@ -90,6 +91,8 @@ class Scheduler:
                 else:
                     # 小哥没有取药需求
                     return self.__noTarget, TargetStatus.NO_MORE_REQUEST.value
+            else:
+                return self.nextTarget[car_id], TargetStatus.SUCCESS.value
 
     def Delivered(self, car_id=0):
         """
@@ -197,7 +200,10 @@ class Scheduler:
             try:
                 self.coolingTimeStateMachine.send("SPEED_UP")
             except TransitionNotAllowed:
-                print("不允许的状态转换!")
+                if not self.DEBUG:
+                    print("不允许的状态转换!")
+                else:
+                    raise ValueError("不允许的状态转换!")
                 return False
             for timer in self.timers:
                 timer.setRemainTime(timer.getRemainTime() / 2)
@@ -210,7 +216,7 @@ class Scheduler:
                 return False
             for timer in self.timers:
                 timer.setRemainTime(timer.getRemainTime() * 2)
-                timer.setNewInterval(timer.getReloadInterval() / 2)
+                timer.setNewInterval(timer.getReloadInterval() * 2)
 
 
 @unique
@@ -298,10 +304,10 @@ NeedToChangeStatus = Enum(
 
 class CoolingTime(StateMachine):
     # 定义状态
-    speedUpState = State("speedUp")
-    slowDownState = State("slowDown")
-    normalState = State("normal", initial=True)
+    speedUpState = State("speedUpState")
+    slowDownState = State("slowDownState")
+    normalState = State("normalState", initial=True)
 
     # 定义状态转换
-    speedUp = slowDownState.to(normalState) | normalState.to(speedUpState)
-    slowDown = speedUpState.to(normalState) | normalState.to(slowDownState)
+    SPEED_UP = slowDownState.to(normalState) | normalState.to(speedUpState)
+    SLOW_DOWN = speedUpState.to(normalState) | normalState.to(slowDownState)

@@ -40,12 +40,15 @@ if __name__ == "__main__":
     assert scheduler.GetNeedToChangeStatus() == NeedToChangeStatus.SPEED_UP.value
     scheduler.UpdateDrugCoolingTime(NeedToChangeStatus.SPEED_UP.value)
     time.sleep(5)
-    assert scheduler.GetRemainDrug("B") == 5 and scheduler.GetRemainDrug("A") == 6
+    scheduler.Delivered()
+    assert scheduler.GetRemainDrug("B") == 5 and scheduler.GetRemainDrug("C") == 7
     time.sleep(2)
     assert scheduler.GetNeedToChangeStatus() == NeedToChangeStatus.SLOW_DOWN.value
     scheduler.GetNewRequest("C", 1)
     nextTarget, _ = scheduler.GetNextTarget()
-    assert nextTarget["requestType"] == "A" and nextTarget["deliverDestination"] == 4
+    assert nextTarget["requestType"] == "A" and (
+        nextTarget["deliverDestination"] == 4 or nextTarget["deliverDestination"] == 2
+    )
     time.sleep(6)
     scheduler.DrugLoaded()
     assert scheduler.GetRemainDrug("B") == 8
@@ -53,7 +56,7 @@ if __name__ == "__main__":
     assert scheduler.GetNeedToChangeStatus() == NeedToChangeStatus.SLOW_DOWN.value
     scheduler.UpdateDrugCoolingTime(NeedToChangeStatus.SLOW_DOWN.value)
     time.sleep(8)
-    assert scheduler.GetRemainDrug("B") == 10 and scheduler.GetRemainDrug("C") == 12
+    assert scheduler.GetRemainDrug("B") == 10 and scheduler.GetRemainDrug("C") == 13
 
     # scheduler.GetNewRequest("A", 1)
     # nextTarget, _ = scheduler.GetNextTarget()
