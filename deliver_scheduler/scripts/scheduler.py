@@ -184,7 +184,7 @@ class Scheduler:
 
     def UpdateDrugCoolingTime(self, needToChangeStatus):
         """在正确识别手写数字后，更新药物的刷新时间
-        @needToChangeStatus: 修改刷新时间的方向，可以为 DONT_CHANGE, SPEED_UP, SLOW_DOWN
+        @needToChangeStatus: 修改刷新时间的方向，可以为 DONT_CHANGE, SPEED_UP, SLOW_DOWN (.value)
         @return: True, 当转换成功; False, 当转换失败
         """
         if needToChangeStatus == NeedToChangeStatus.DONT_CHANGE.value:
