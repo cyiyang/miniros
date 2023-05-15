@@ -12,11 +12,11 @@ roslaunch robot_navigation navigation_rviz.launch
 * 编写的功能包
  * roslaunch astra_camera astra.launch
  * roslaunch robot_navigation robot_navigation.launch
- * roslaunch actuator car.launch
+ * roslaunch actuator car0.launch #主车
  * roslaunch char_recognizer char_recognizer.launch         # 真图
  * roslaunch char_recognizer char_recognizer_fake.launch    # 假图
  * roslaunch deliver_scheduler scheduler.launch
- * roslaunch board_reminder board_reminder.launch
+ * roslaunch board_reminder board_reminder_launch.launch
 
 
 # map参数

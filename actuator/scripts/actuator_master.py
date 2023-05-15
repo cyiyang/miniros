@@ -7,19 +7,20 @@ from actionlib_msgs.msg import GoalStatus
 import actionlib
 from actuator.srv import DestinationMsg, DestinationMsgRequest
 from actuator.srv import PermissionMsg,PermissionMsgResponse
-from actuator.srv import ChangeTimeResult,ChangeTimeResultResponse
+# from actuator.srv import ChangeTimeResult,ChangeTimeResultResponse,ChangeTimeResultRequest
 from tf.transformations import quaternion_from_euler
 from geometry_msgs.msg import Point, Pose, Quaternion
 import sys
 from math import pi
 from Announcer import Announcer
 import threading
+from std_msgs import Int16
 
 def thread_CV():
     rospy.spin()
 
-def thread_SCH():
-    rospy.spin()
+# def thread_SCH():
+#     rospy.spin()
 
 
 class CarActuator(object):
@@ -30,8 +31,10 @@ class CarActuator(object):
         self.permission_server =rospy.Service("permission",PermissionMsg,self.actuator_dealCV_ask)
         rospy.loginfo("命令服务器正常启动")
 
-        self.changetime_server=rospy.Service("changetime",ChangeTimeResult,self.actuatot_dealSCH_ask)
-        rospy.loginfo("Change服务器正常启动")
+        self.location_pub = rospy.Publisher("masterlocation",Int16,queue_size=10)
+
+        # self.changetime_server=rospy.Service("changetime",ChangeTimeResult,self.actuatot_dealSCH_ask)
+        # rospy.loginfo("Change服务器正常启动")
         # 订阅move_base服务器的消息
         self.move_base_client = actionlib.SimpleActionClient(
             "move_base", MoveBaseAction
@@ -53,8 +56,8 @@ class CarActuator(object):
         self.mission_request = DestinationMsgRequest()  # 定义请求
         self.mission_request.car_no = int(sys.argv[1])  # 设定编号
 
-        self.changetime_flag = 0  #修改时间标志位，0不修改，1修改
-        self.changetime_count = 0 #修改时间计数器
+        # self.changetime_flag = 0  #修改时间标志位，0不修改，1修改
+        # self.changetime_count = 0 #修改时间计数器
         # self.changetime_req
 
         self.responseToABC = {-1:'E',0: 'A', 1: 'B', 2: 'C'}
@@ -78,13 +81,13 @@ class CarActuator(object):
             quaternions.append(q)
         # 创建特殊点列表
         point_ABC = list()
-        point_ABC.append(Pose(Point(0.42, 2.3, 0), quaternions[0]))  # A点
+        point_ABC.append(Pose(Point(0.45, 2.3, 0), quaternions[0]))  # A点
         point_ABC.append(Pose(Point(1.28, 2.73, 0), quaternions[1]))  # B点
         point_ABC.append(Pose(Point(1.28, 1.80, 0), quaternions[2]))  # C点
 
         point_1234 = list()
         point_1234.append(Pose(Point(0,0,0), quaternions[3]))           #特殊点保护
-        point_1234.append(Pose(Point(-1.90, 2.32, 0), quaternions[4]))  # 1点
+        point_1234.append(Pose(Point(-1.85, 2.32, 0), quaternions[4]))  # 1点
         point_1234.append(Pose(Point(-1.03, 1.80, 0), quaternions[5]))  # 2点
         point_1234.append(Pose(Point(-1.88, 1.28, 0), quaternions[6]))  # 3点
         point_1234.append(Pose(Point(-1.03, 0.88, 0), quaternions[7]))  # 4点
@@ -99,11 +102,13 @@ class CarActuator(object):
         add_thread.start()
         rospy.loginfo("deal CV thread OK")
 
-        add_thread = threading.Thread(target=thread_SCH)
-        add_thread.start()
-        rospy.loginfo("deal SCH thread OK")
+        # add_thread = threading.Thread(target=thread_SCH)
+        # add_thread.start()
+        # rospy.loginfo("deal SCH thread OK")
 
         while not rospy.is_shutdown():
+
+            self.location_pub.publish(self.status) #广播位置
             # 请求任务相关
             if self.status == 1:
                 rospy.loginfo("请求新任务")
@@ -113,6 +118,7 @@ class CarActuator(object):
                 self.status = 4
             elif self.status == 3:
                 rospy.loginfo("请求失败")
+                rospy.sleep(1)
                 self.actuator_ask_newtarget()
 
             # 取药相关
@@ -140,25 +146,25 @@ class CarActuator(object):
                 goal.target_pose.header.frame_id = "map"
                 goal.target_pose.header.stamp = rospy.Time.now()
                 goal.target_pose.pose = point_special[1]
-                if(self.changetime_flag==True): #需要修改
-                    self.changetime_flag=False #使用后,置0
-                    rospy.loginfo("时间修改状态")
-                    if self.actuator_move(goal) == True:
-                        rospy.loginfo("播放音频....")
-                        rospy.sleep(3)
-                        rospy.loginfo("播放音频结束....")
-                        self.status = 8 #手写数字成功/播放结束
-                    else:
-                        rospy.loginfo("手写数字识别区失败")
-                        self.status = 9
-                else: #不需要修改，那就用牵引法
-                    self.move_base_client.send_goal(goal)
-                    rospy.sleep(3)
-                    rospy.loginfo("不修改，状态转移")
-                    self.status = 10
+                # if(self.changetime_flag==1): #需要修改
+                #     rospy.loginfo("时间修改状态")
+                #     if self.actuator_move(goal) == True:
+                #         rospy.loginfo("播放音频....")
+                #         rospy.sleep(3)
+                #         rospy.loginfo("播放音频结束....")
+                #         self.status = 8 #手写数字成功/播放结束
+                #         self.changetime_flag=0 #使用后,置0
+                #     else:
+                #         rospy.loginfo("手写数字识别区失败")
+                #         self.status = 9
+                # else: #不需要修改，那就用牵引法
+                self.move_base_client.send_goal(goal)
+                rospy.sleep(3)
+                rospy.loginfo("不修改，状态转移")
+                self.status = 10
 
-            elif self.status == 8:
-                self.status == 10
+            # elif self.status == 8:
+            #     self.status == 10
 
             # 送药相关
             elif self.status == 10:
@@ -241,21 +247,23 @@ class CarActuator(object):
        
 
     # 向服务器上报已到达手写数字识别区，未增加
-    def actuator_arriveHandNum(self):
-        self.mission_request.request_type = 4  # 请求包编号为“到达手写数字识别区”
-        self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
+    # def actuator_arriveHandNum(self):
+    #     self.mission_request.request_type = 4  # 请求包编号为“到达手写数字识别区”
+    #     self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
         
-    def actuatot_dealSCH_ask(self,req):
-        if(req.request == 1) :   #需要修改请求
-            rospy.loginfo("接收到修改请求")
-            self.changetime_flag=1 
-        else:
-            self.changetime_flag=0
+    # def actuatot_dealSCH_ask(self,req):
+    #     if(req.NeedToChange == 1) :   #需要修改请求
+    #         rospy.loginfo("接收到修改请求")
+    #         self.changetime_flag=1 
+    #     else:
+    #         self.changetime_flag=0
 
-        while not self.status == 8: #如果不满足状态，卡死
-            rospy.loginfo("change状态不满足")
-        resp = ChangeTimeResultResponse(True)
-        return resp
+    #     while not self.status == 8: #如果不满足状态，卡死
+    #         rospy.loginfo("change状态不满足")
+    #         rospy.sleep(10)
+    #         # if(self.status == 8):
+    #     resp = ChangeTimeResultResponse(True)#状态满足
+    #     return resp
 
 
 
