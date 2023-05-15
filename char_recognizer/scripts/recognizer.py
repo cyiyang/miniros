@@ -258,7 +258,7 @@ class CharRecognizer:
             cv2.imwrite(image_name, board_image)
         else:
             board_image = cv2.imread(
-                "/home/EPRobot/robot_ws/src/char_recognizer/board1_AAAA.jpg"
+                "/home/EPRobot/robot_ws/src/char_recognizer/board1_ABC.jpg"
             )
         board_image = imutils.resize(board_image, width=1000)
         # Step2. 识别目标板字母
