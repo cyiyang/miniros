@@ -199,7 +199,7 @@ class ActualCharRecognizer:
         charImages = self.charDetect(charAprxes)
         charResult = ["", "", "", ""]
         for i in range(4):
-            char_single = self.tmplMatch(charImages[i], 0.8)  # [参数!]
+            char_single = self.tmplMatch(charImages[i], 0.7)  # [参数!]
             charResult[i] = char_single
         return charResult
 
@@ -210,7 +210,7 @@ class CharRecognizer:
         rospy.init_node("char_recognizer")
         self.bridge = cv_bridge.CvBridge()  # 创建CV桥
         self.actRecognizer = ActualCharRecognizer(
-            "/home/EPRobot/drug-deliverer/char_recognizer/template"
+            "/home/EPRobot/robot_ws/src/char_recognizer/template"
         )  # 创建字母识别器(实际)
         self.scheduler_client = rospy.ServiceProxy(
             "mission", DestinationMsg
@@ -253,11 +253,11 @@ class CharRecognizer:
             board_image = self.bridge.imgmsg_to_cv2(board_image, "bgr8")
         else:
             board_image = cv2.imread(
-                "/home/EPRobot/drug-deliverer/char_recognizer/board1_screen11.jpg"
+                "/home/EPRobot/robot_ws/src/char_recognizer/board1_screen11.jpg"
             )
         board_image = imutils.resize(board_image, width=1000)
         image_name = (
-            "/home/EPRobot/drug-deliverer/char_recognizer/board1_image/board1_%s.jpg"
+            "/home/EPRobot/robot_ws/src/char_recognizer/board1_image/board1_%s.jpg"
             % str(random.randint(10000, 99999))
         )
         cv2.imwrite(image_name, board_image)
