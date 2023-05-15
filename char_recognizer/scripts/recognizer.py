@@ -251,16 +251,16 @@ class CharRecognizer:
             )  # 订阅一次照片
             temp_sub.unregister()  # 获取到照片后, 取消临时订阅
             board_image = self.bridge.imgmsg_to_cv2(board_image, "bgr8")
+            image_name = (
+                "/home/EPRobot/robot_ws/src/char_recognizer/board1_image/board1_%s.jpg"
+                % str(random.randint(10000, 99999))
+            )
+            cv2.imwrite(image_name, board_image)
         else:
             board_image = cv2.imread(
-                "/home/EPRobot/robot_ws/src/char_recognizer/board1_screen11.jpg"
+                "/home/EPRobot/robot_ws/src/char_recognizer/board1_AAAA.jpg"
             )
         board_image = imutils.resize(board_image, width=1000)
-        image_name = (
-            "/home/EPRobot/robot_ws/src/char_recognizer/board1_image/board1_%s.jpg"
-            % str(random.randint(10000, 99999))
-        )
-        cv2.imwrite(image_name, board_image)
         # Step2. 识别目标板字母
         charResult = self.actRecognizer.recognize(board_image)
         rospy.loginfo(
