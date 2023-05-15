@@ -85,15 +85,26 @@ def HandleRequests(req):
 
 def DrugCoolingTimeHandlerMain():
     needToChangeService = rospy.ServiceProxy("changetime", ChangeTimeResult)
+    rospy.loginfo("[scheduler] 等待changetime服务...")
+    # playsound("/home/EPRobot/Music/pick_up.mp3")
     needToChangeService.wait_for_service()
+    rospy.loginfo("[scheduler] 药物刷新时间检测启动!")
+    # playsound("/home/EPRobot/Music/dispense.mp3")
+    
     while not rospy.is_shutdown():
         need = scheduler.GetNeedToChangeStatus()
         if need != NeedToChangeStatus.DONT_CHANGE.value:
+            if need==NeedToChangeStatus.SPEED_UP.value:
+                rospy.loginfo("[scheduler] 现在需要加快药物刷新")
+            if need==NeedToChangeStatus.SLOW_DOWN.value:
+                rospy.loginfo("[scheduler] 现在需要减缓药物刷新")
+            rospy.loginfo("[scheduler] 发出修改请求...")
             response = needToChangeService.call(need)
             if need != scheduler.GetNeedToChangeStatus():
                 # 可能存在到达手写数字点后，已经不需要更新配送时间的情况
                 rospy.logwarn("[scheduler] 更新时间需求与发出请求时不同!")
             if response.success:
+                rospy.loginfo("[scheduler] 修改成功!")
                 scheduler.UpdateDrugCoolingTime(need)
 
 
@@ -112,7 +123,7 @@ if __name__ == "__main__":
     print("[scheduler] 调度器就绪!")
 
     drugCoolingTimeHandlerThread = threading.Thread(target=DrugCoolingTimeHandlerMain)
-    drugCoolingTimeHandlerThread.setDaemon(True)
+    # drugCoolingTimeHandlerThread.setDaemon(True)
     drugCoolingTimeHandlerThread.start()
 
     SchedulerServerMain()

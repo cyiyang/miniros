@@ -113,6 +113,7 @@ class CarActuator(object):
                 self.status = 4
             elif self.status == 3:
                 rospy.loginfo("请求失败")
+                rospy.sleep(10)
                 self.actuator_ask_newtarget()
 
             # 取药相关
