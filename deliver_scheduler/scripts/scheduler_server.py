@@ -25,6 +25,7 @@ def SchedulerServerMain():
 def HandleRequests(req):
     response = DestinationMsgResponse()
 
+    rospy.loginfo("[scheduler] %d 号车:", req.car_no)
     if req.request_type == RequestType.GetNewRequest.value:
         rospy.loginfo("[scheduler]收到新的目标板信息!")
         # 将药物类型数字转换为字符"A","B","C"
@@ -51,7 +52,7 @@ def HandleRequests(req):
         for item in currentQueue:
             rospy.loginfo("[scheduler] %c -> %d", item[0], item[1])
 
-        schedulerResponse, status = scheduler.GetNextTarget()
+        schedulerResponse, status = scheduler.GetNextTarget(req.car_no)
 
         # schedulerResponse的requestType字段为请求药物的类型，为字符，需要将其转换为整数
         response.drug_location = requestDrugTypeToInt[schedulerResponse["requestType"]]
