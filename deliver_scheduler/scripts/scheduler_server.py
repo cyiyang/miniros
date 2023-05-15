@@ -1,13 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
+import threading
 
 # Future warning 不知道是干什么的
-sys.path.append("/home/ncut/scheduler_ws/devel/lib/python2.7/dist-packages")
+# sys.path.append("/home/ncut/scheduler_ws/devel/lib/python2.7/dist-packages")
 import rospy
-from deliver_scheduler.srv import DestinationMsg, DestinationMsgResponse
+from scheduler import NeedToChangeStatus, RequestType, Scheduler, TargetStatus
 
-from scheduler import RequestType, Scheduler, TargetStatus
+from deliver_scheduler.srv import (
+    ChangeTimeResult,
+    ChangeTimeResultResponse,
+    DestinationMsg,
+    DestinationMsgResponse,
+)
 
 DEBUG = 0
 
@@ -19,6 +25,7 @@ def SchedulerServerMain():
 def HandleRequests(req):
     response = DestinationMsgResponse()
 
+    rospy.loginfo("[scheduler] %d 号车:", req.car_no)
     if req.request_type == RequestType.GetNewRequest.value:
         rospy.loginfo("[scheduler]收到新的目标板信息!")
         # 将药物类型数字转换为字符"A","B","C"
@@ -45,7 +52,7 @@ def HandleRequests(req):
         for item in currentQueue:
             rospy.loginfo("[scheduler] %c -> %d", item[0], item[1])
 
-        schedulerResponse, status = scheduler.GetNextTarget()
+        schedulerResponse, status = scheduler.GetNextTarget(req.car_no)
 
         # schedulerResponse的requestType字段为请求药物的类型，为字符，需要将其转换为整数
         response.drug_location = requestDrugTypeToInt[schedulerResponse["requestType"]]
@@ -76,6 +83,20 @@ def HandleRequests(req):
         return emptyResponse
 
 
+def DrugCoolingTimeHandlerMain():
+    needToChangeService = rospy.ServiceProxy("changetime", ChangeTimeResult)
+    needToChangeService.wait_for_service()
+    while not rospy.is_shutdown():
+        need = scheduler.GetNeedToChangeStatus()
+        if need != NeedToChangeStatus.DONT_CHANGE.value:
+            response = needToChangeService.call(need)
+            if need != scheduler.GetNeedToChangeStatus():
+                # 可能存在到达手写数字点后，已经不需要更新配送时间的情况
+                rospy.logwarn("[scheduler] 更新时间需求与发出请求时不同!")
+            if response.success:
+                scheduler.UpdateDrugCoolingTime(need)
+
+
 if __name__ == "__main__":
     scheduler = Scheduler()
     emptyResponse = DestinationMsgResponse()
@@ -89,5 +110,9 @@ if __name__ == "__main__":
     rospy.init_node("scheduler_server")
     s = rospy.Service("mission", DestinationMsg, HandleRequests)
     print("[scheduler] 调度器就绪!")
+
+    drugCoolingTimeHandlerThread = threading.Thread(target=DrugCoolingTimeHandlerMain)
+    drugCoolingTimeHandlerThread.setDaemon(True)
+    drugCoolingTimeHandlerThread.start()
 
     SchedulerServerMain()

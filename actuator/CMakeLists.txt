@@ -64,6 +64,7 @@ add_service_files(
   FILES
   DestinationMsg.srv
   PermissionMsg.srv
+  ChangeTimerResult.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -166,7 +167,8 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/actuator_ros.py
+  scripts/actuator_master.py
+  scripts/actuator_slave.py
   scripts/mission_server.py
   scripts/permission_client.py
   scripts/Announcer.py

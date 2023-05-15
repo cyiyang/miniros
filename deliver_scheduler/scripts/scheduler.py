@@ -22,7 +22,8 @@ class Scheduler:
         """
         self.queue = []
         self.classWeights = {"A": 20, "B": 15, "C": 10}
-        self.nextTarget = None
+        self.CAR_CNT = 2
+        self.nextTarget = [None] * self.CAR_CNT
         self.queueLock = threading.Lock()  # May be implemented
 
         # 起始时三种药各有一瓶
@@ -74,15 +75,15 @@ class Scheduler:
             {"requestType": None, "deliverDestination": None}
         """
         with self.queueLock:
-            if self.nextTarget is None:
+            if self.nextTarget[car_id] is None:
                 if self.queue:
                     # 小哥有取药需求时，更新优先级
                     self.__UpdatePriority()
                     for index, target in enumerate(self.queue):
                         # TODO: 实现优先级高的药物不可用时切换至下一类药物
                         if self.GetRemainDrug(target["requestType"]) >= 1:
-                            self.nextTarget = self.queue.pop(index)
-                            return self.nextTarget, TargetStatus.SUCCESS.value
+                            self.nextTarget[car_id] = self.queue.pop(index)
+                            return self.nextTarget[car_id], TargetStatus.SUCCESS.value
                     # 循环正常结束，表明需求的药物现在都没有，应返回无目标
                     return self.__noTarget, TargetStatus.NO_DRUG_REMAIN.value
                     # self.nextTarget = self.queue.pop()
@@ -90,15 +91,15 @@ class Scheduler:
                     # 小哥没有取药需求
                     return self.__noTarget, TargetStatus.NO_MORE_REQUEST.value
 
-    def Delivered(self):
+    def Delivered(self, car_id=0):
         """
         送达药物时调用该函数
         """
-        if self.nextTarget is None:
+        if self.nextTarget[car_id] is None:
             # 多次调用的情况直接返回
             return
 
-        self.nextTarget = None
+        self.nextTarget[car_id] = None
 
     def GetNewRequest(self, requestType, deliverDestination):
         """
@@ -129,9 +130,9 @@ class Scheduler:
         # 此处不能加锁，否则在 GetNextTarget 中调用该函数时会导致死锁；因此将该方法变成私有方法
         self.queue.sort(key=lambda x: x["priority"], reverse=True)
 
-    def DrugLoaded(self, carID=0):
+    def DrugLoaded(self, car_id=0):
         """当小车拾取药物，调用该函数。该函数会将nextTarget对应的剩余药物量-1"""
-        self.__UpdateRemainDrug(self.nextTarget["requestType"], -1)
+        self.__UpdateRemainDrug(self.nextTarget[car_id]["requestType"], -1)
 
     def __DrugTracerMain(self, drugType):
         """周期性唤醒，使得某种药物的存量+1"""
@@ -187,7 +188,7 @@ class Scheduler:
 
     def UpdateDrugCoolingTime(self, needToChangeStatus):
         """在正确识别手写数字后，更新药物的刷新时间
-        @needToChangeStatus: 修改刷新时间的方向，可以为 DONT_CHANGE, SPEED_UP, SLOW_DOWN
+        @needToChangeStatus: 修改刷新时间的方向，可以为 DONT_CHANGE, SPEED_UP, SLOW_DOWN (.value)
         @return: True, 当转换成功; False, 当转换失败
         """
         if needToChangeStatus == NeedToChangeStatus.DONT_CHANGE.value:
