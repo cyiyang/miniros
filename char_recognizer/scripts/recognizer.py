@@ -148,11 +148,11 @@ class ActualCharRecognizer:
         charImages = []
         for aprx in aprxes_ordered:
             charImage = self.perspTrans(self.image_forChar, aprx, [110, 110])
-            charImage = cropImg(charImage, 0.1)
+            charImage = self.cropImg(charImage, 0.1)
             charImages.append(charImage)
         return charImages
 
-    def cropImg(image, ratio):
+    def cropImg(self, image, ratio):
         """
         :funciton: cropImage裁剪图片
         :param image: 欲裁剪原图
