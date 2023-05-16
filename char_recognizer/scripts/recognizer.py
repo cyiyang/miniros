@@ -148,6 +148,7 @@ class ActualCharRecognizer:
         charImages = []
         for aprx in aprxes_ordered:
             charImage = self.perspTrans(self.image_forChar, aprx, [110, 110])
+            charImage = cropImg(charImage, 0.1)
             charImages.append(charImage)
         return charImages
 
@@ -175,7 +176,7 @@ class ActualCharRecognizer:
         """
         image_gray = cv2.cvtColor(charImage, cv2.COLOR_BGR2GRAY)
         blank_var = np.var(image_gray, axis=None, dtype=None, ddof=0, keepdims=False)
-        if blank_var < 200:
+        if blank_var < 500:
             return " "
         for tmpl_char in self.charTmplLib:
             tmpl = cv2.imread(tmpl_char[0])
