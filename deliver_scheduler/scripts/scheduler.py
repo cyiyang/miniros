@@ -84,6 +84,10 @@ class Scheduler:
                         # TODO: 实现优先级高的药物不可用时切换至下一类药物
                         if self.GetRemainDrug(target["requestType"]) >= 1:
                             self.nextTarget[car_id] = self.queue.pop(index)
+                            # 为了避免小车对同一送药需求、不同配送目的地导致的“抢药”问题，将药物的更新放在这里处理
+                            self.__UpdateRemainDrug(
+                                self.nextTarget[car_id]["requestType"], -1
+                            )
                             return self.nextTarget[car_id], TargetStatus.SUCCESS.value
                     # 循环正常结束，表明需求的药物现在都没有，应返回无目标
                     return self.__noTarget, TargetStatus.NO_DRUG_REMAIN.value
@@ -134,8 +138,9 @@ class Scheduler:
         self.queue.sort(key=lambda x: x["priority"], reverse=True)
 
     def DrugLoaded(self, car_id=0):
-        """当小车拾取药物，调用该函数。该函数会将nextTarget对应的剩余药物量-1"""
-        self.__UpdateRemainDrug(self.nextTarget[car_id]["requestType"], -1)
+        """当小车拾取药物，调用该函数。该函数现在不会进行任何操作"""
+        # self.__UpdateRemainDrug(self.nextTarget[car_id]["requestType"], -1)
+        return
 
     def __DrugTracerMain(self, drugType):
         """周期性唤醒，使得某种药物的存量+1"""
@@ -170,6 +175,8 @@ class Scheduler:
         """获取当前是否需要修改配送周期"""
         with self.queueLock:
             haveRequestForA = False
+            overflowForB = False
+            overflowForC = False
             for request in self.queue:
                 if request["requestType"] == "A":
                     haveRequestForA = True
@@ -181,9 +188,9 @@ class Scheduler:
                 overflowForB = True
             if self.GetRemainDrug("C") >= 3:
                 overflowForC = True
-        if haveRequestForA and noRemainForA:
+        if haveRequestForA and noRemainForA and self.coolingTimeStateMachine.current_state!="speedUpState":
             return NeedToChangeStatus.SPEED_UP.value
-        elif not noRemainForA and (overflowForB or overflowForC):
+        elif (not noRemainForA) and (overflowForB or overflowForC) and self.coolingTimeStateMachine.current_state!="slowDownState":
             # B或C发生堆积而且A有剩余时，应减缓药物刷新
             return NeedToChangeStatus.SLOW_DOWN.value
         else:
@@ -217,6 +224,9 @@ class Scheduler:
             for timer in self.timers:
                 timer.setRemainTime(timer.getRemainTime() * 2)
                 timer.setNewInterval(timer.getReloadInterval() * 2)
+
+    def ForgiveCurrentTask(self, car_no):
+        return
 
 
 @unique

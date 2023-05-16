@@ -122,8 +122,8 @@ if __name__ == "__main__":
     s = rospy.Service("mission", DestinationMsg, HandleRequests)
     print("[scheduler] 调度器就绪!")
 
-    drugCoolingTimeHandlerThread = threading.Thread(target=DrugCoolingTimeHandlerMain)
-    # drugCoolingTimeHandlerThread.setDaemon(True)
-    drugCoolingTimeHandlerThread.start()
+    # drugCoolingTimeHandlerThread = threading.Thread(target=DrugCoolingTimeHandlerMain)
+    # # drugCoolingTimeHandlerThread.setDaemon(True)
+    # drugCoolingTimeHandlerThread.start()
 
     SchedulerServerMain()

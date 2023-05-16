@@ -25,14 +25,14 @@ TebLocalPlannerROS:
  # Robot 机器人
 
 #
- max_vel_x: 1.0  #最大x向速度,
+ max_vel_x: 1.0 #最大x向速度,
  max_vel_y: 0.0  #最大y向速度，非全向为0
  max_vel_x_backwards: 0.8 #最大x后退速度
 
  max_vel_theta: 1.5 # the angular velocity is also bounded by min_turning_radius in case of a carlike robot (r = v / omega)
  acc_lim_x: 0.1  #最大x加速度
  acc_lim_y: 0  #最大y向加速度，非全向移动小车需要设置为0
- acc_lim_theta: 0.4  #最大角加速度
+ acc_lim_theta: 0.42  #最大角加速度
 
  # ********************** Carlike robot parameters 阿克曼结构车的参数********************
  min_turning_radius: 0.45        #最小转弯半径
@@ -52,8 +52,9 @@ TebLocalPlannerROS:
 
  # GoalTolerance 目标容忍度
 
- xy_goal_tolerance: 0.1  #目标xy偏移容忍度原来为0.2
- yaw_goal_tolerance: 0.2   #目标角度容忍偏移度
+ xy_goal_tolerance: 0.1  #目标xy偏移容忍度
+ yaw_goal_tolerance: 0.35   #目标角度容忍偏移度,尝试修复Clearing costmap to unstuck robot 问题
+ #解决方法来自https://github.com/pal-robotics/tiago_navigation/issues/7，原来为0.2
  free_goal_vel: False   #允许机器人以最大速度到达目的地，这里要停稳，所以为false
 
  # Obstacles 障碍物
