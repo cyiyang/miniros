@@ -257,26 +257,37 @@ class CharRecognizer:
         return NeedToSeeMsgResponse(True)
 
     def RecognizeHandler(self):
+        def Photograph():
+            if not self.use_fake_img:  # 不使用假图: 向相机订阅照片
+                temp_sub = rospy.Subscriber("/usb_cam/image_raw", Image)  # 创建临时的照片订阅
+                rospy.sleep(1)  # 延时1s, 等待相机自动曝光
+                board_image = rospy.wait_for_message(
+                    "/usb_cam/image_raw", Image
+                )  # 订阅一次照片
+                temp_sub.unregister()  # 获取到照片后, 取消临时订阅
+                board_image = self.bridge.imgmsg_to_cv2(board_image, "bgr8")
+                image_name = (
+                    "/home/EPRobot/robot_ws/src/char_recognizer/board1_image/board1_%s.jpg"
+                    % str(random.randint(10000, 99999))
+                )
+                cv2.imwrite(image_name, board_image)
+            else:
+                board_image = cv2.imread(
+                    "/home/EPRobot/robot_ws/src/char_recognizer/board1_ABC.jpg"
+                )
+            return board_image
+
         rospy.loginfo("[recognizer] 开始识别...")
         # Step1. 获取目标板照片
-        if not self.use_fake_img:  # 不使用假图: 向相机订阅照片
-            temp_sub = rospy.Subscriber("/usb_cam/image_raw", Image)  # 创建临时的照片订阅
-            rospy.sleep(1)  # 延时1s, 等待相机自动曝光
-            board_image = rospy.wait_for_message("/usb_cam/image_raw", Image)  # 订阅一次照片
-            temp_sub.unregister()  # 获取到照片后, 取消临时订阅
-            board_image = self.bridge.imgmsg_to_cv2(board_image, "bgr8")
-            image_name = (
-                "/home/EPRobot/robot_ws/src/char_recognizer/board1_image/board1_%s.jpg"
-                % str(random.randint(10000, 99999))
-            )
-            cv2.imwrite(image_name, board_image)
-        else:
-            board_image = cv2.imread(
-                "/home/EPRobot/robot_ws/src/char_recognizer/board1_ABC.jpg"
-            )
+        board_image = Photograph()
         # board_image = imutils.resize(board_image, width=1000)     # 原640*480照片需放大才能识别
         # Step2. 识别目标板字母
         charResult = self.actRecognizer.recognize(board_image)
+        while charResult == [" ", " ", " ", " "]:
+            rospy.loginfo("[recognizer] 识别到四个空白框! 等待3s后重新识别...")
+            rospy.sleep(3)
+            board_image = Photograph()
+            charResult = self.actRecognizer.recognize(board_image)
         rospy.loginfo(
             "[recognizer] 识别成功, 结果: 1[%c] 2[%c] 3[%c] 4[%c]"
             % (charResult[0], charResult[1], charResult[2], charResult[3])
