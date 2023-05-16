@@ -151,6 +151,21 @@ class ActualCharRecognizer:
             charImages.append(charImage)
         return charImages
 
+    def cropImg(image, ratio):
+        """
+        :funciton: cropImage裁剪图片
+        :param image: 欲裁剪原图
+        :param ratio: 上下左右裁剪的长度比例
+        :return: 裁剪后的图片crop_img
+        """
+        height, width, _ = image.shape
+        x = int(width * ratio)
+        y = int(height * ratio)
+        w = int(width * (1 - ratio * 2))
+        h = int(height * (1 - ratio * 2))
+        crop_img = image[y : y + h, x : x + w]
+        return crop_img
+
     def tmplMatch(self, charImage, threshold):
         """
         :function: templateMatch模板匹配
@@ -159,8 +174,8 @@ class ActualCharRecognizer:
         :return: 识别结果(字母)
         """
         image_gray = cv2.cvtColor(charImage, cv2.COLOR_BGR2GRAY)
-        black_ratio = float((image_gray < 128).sum()) / image_gray.size
-        if black_ratio < 0.17:
+        blank_var = np.var(image_gray, axis=None, dtype=None, ddof=0, keepdims=False)
+        if blank_var < 200:
             return " "
         for tmpl_char in self.charTmplLib:
             tmpl = cv2.imread(tmpl_char[0])
@@ -221,34 +236,32 @@ class CharRecognizer:
         self.board_reminder_server = rospy.Service(
             "board_reminder_server", NeedToSeeMsg, self.ReminderHandler
         )  # 创建目标板提示服务器
-        rospy.loginfo("[recognizer]recognizer_server正常启动")
+        rospy.loginfo("[recognizer] recognizer_server正常启动")
         rospy.wait_for_service("mission")
-        rospy.loginfo("[recognizer]连接schduler_server成功")
+        rospy.loginfo("[recognizer] 连接schduler_server成功")
         rospy.wait_for_service("permission")
-        rospy.loginfo("[recognizer]连接actuator_server成功")
+        rospy.loginfo("[recognizer] 连接actuator_server成功")
         rospy.spin()
 
     def ReminderHandler(self, req):
-        rospy.loginfo("[recognizer]收到req: %d" % req.need_to_see)
+        rospy.loginfo("[recognizer] 收到reminder请求“需要看”: %d" % req.need_to_see)
         if req.need_to_see:
             can_see = 0  # 默认“不能看”
             while not can_see:
                 can_see = self.actuator_client.call(0).permission  # 向actuator请求“想看”
-                rospy.loginfo("[recognizer]已向actuator请求“想看”")
+                rospy.loginfo("[recognizer] 已向actuator请求“想看”")
                 rospy.sleep(2)
-            rospy.loginfo("[recognizer]收到actuator回复“能看”")
+            rospy.loginfo("[recognizer] 收到actuator回复“能看”")
             self.RecognizeHandler()  # “能看”以后开始识别
         return NeedToSeeMsgResponse(True)
 
     def RecognizeHandler(self):
-        rospy.loginfo("[recognizer]开始识别...")
+        rospy.loginfo("[recognizer] 开始识别...")
         # Step1. 获取目标板照片
-        if not self.use_fake_img:
-            temp_sub = rospy.Subscriber("/camera/rgb/image_raw", Image)  # 创建临时的照片订阅
-            rospy.sleep(2)  # 延时2s, 等待相机自动曝光
-            board_image = rospy.wait_for_message(
-                "/camera/rgb/image_raw", Image
-            )  # 订阅一次照片
+        if not self.use_fake_img:  # 不使用假图: 向相机订阅照片
+            temp_sub = rospy.Subscriber("/usb_cam/image_raw", Image)  # 创建临时的照片订阅
+            rospy.sleep(1)  # 延时1s, 等待相机自动曝光
+            board_image = rospy.wait_for_message("/usb_cam/image_raw", Image)  # 订阅一次照片
             temp_sub.unregister()  # 获取到照片后, 取消临时订阅
             board_image = self.bridge.imgmsg_to_cv2(board_image, "bgr8")
             image_name = (
@@ -260,15 +273,15 @@ class CharRecognizer:
             board_image = cv2.imread(
                 "/home/EPRobot/robot_ws/src/char_recognizer/board1_ABC.jpg"
             )
-        board_image = imutils.resize(board_image, width=1000)
+        # board_image = imutils.resize(board_image, width=1000)     # 原640*480照片需放大才能识别
         # Step2. 识别目标板字母
         charResult = self.actRecognizer.recognize(board_image)
         rospy.loginfo(
-            "[recognizer]识别成功, 结果: 1[%c] 2[%c] 3[%c] 4[%c]"
+            "[recognizer] 识别成功, 结果: 1[%c] 2[%c] 3[%c] 4[%c]"
             % (charResult[0], charResult[1], charResult[2], charResult[3])
         )
         self.actuator_client.call(1)  # 向actuator请求“看完了”
-        rospy.loginfo("[recognizer]已向actuator请求“看完了”")
+        rospy.loginfo("[recognizer] 已向actuator请求“看完了”")
         # Step3. 向scheduler请求新的配送需求(作为client)
         drugTypeToInt = {"A": 0, "B": 1, "C": 2}
         for i in range(4):
@@ -277,7 +290,7 @@ class CharRecognizer:
                     0, 0, drugTypeToInt[charResult[i]], i + 1
                 )  # (i+1): 目的地编号为1~4
                 rospy.loginfo(
-                    "[recognizer]已向scheduler请求新配送需求: 药品[%c] --> 窗口[%d]"
+                    "[recognizer] 已向scheduler请求新配送需求: 药品[%c] --> 窗口[%d]"
                     % (charResult[i], i + 1)
                 )
 
