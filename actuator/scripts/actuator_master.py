@@ -83,16 +83,16 @@ class CarActuator(object):
             quaternions.append(q)
         # 创建特殊点列表
         point_ABC = list()
-        point_ABC.append(Pose(Point(0.47, 2.33, 0), quaternions[0]))  # A点
-        point_ABC.append(Pose(Point(1.30, 2.77, 0), quaternions[1]))  # B点,75下漂
+        point_ABC.append(Pose(Point(0.42, 2.31, 0), quaternions[0]))  # A点,2.33点往上漂移
+        point_ABC.append(Pose(Point(1.30, 2.75, 0), quaternions[1]))  # B点,75下漂
         point_ABC.append(Pose(Point(1.28, 1.78, 0), quaternions[2]))  # C点
 
         point_1234 = list()
         point_1234.append(Pose(Point(0,0,0), quaternions[3]))           #特殊点保护
-        point_1234.append(Pose(Point(-1.85, 2.25, 0), quaternions[4]))  # 1点2.27上漂
-        point_1234.append(Pose(Point(-1.03, 1.77, 0), quaternions[5]))  # 2点,1.80上漂
-        point_1234.append(Pose(Point(-1.88, 1.33, 0), quaternions[6]))  # 3点,1.35上漂
-        point_1234.append(Pose(Point(-1.03, 0.87, 0), quaternions[7]))  # 4点
+        point_1234.append(Pose(Point(-1.84, 2.26, 0), quaternions[4]))  # 1点2.27上漂,1.85太靠近外墙
+        point_1234.append(Pose(Point(-1.03, 1.75, 0), quaternions[5]))  # 2点,1.80上漂
+        point_1234.append(Pose(Point(-1.83, 1.33, 0), quaternions[6]))  # 3点,1.35上漂
+        point_1234.append(Pose(Point(-1.03, 0.90, 0), quaternions[7]))  # 4点
 
         point_special = list()
         point_special.append(Pose(Point(0, 0, 0), quaternions[8]))  # 起点
