@@ -25,7 +25,7 @@ TebLocalPlannerROS:
  # Robot 机器人
 
 #
- max_vel_x: 0.7 #最大x向速度,
+ max_vel_x: 0.85 #最大x向速度,
  max_vel_y: 0.0  #最大y向速度，非全向为0
  max_vel_x_backwards: 0.8 #最大x后退速度
 
