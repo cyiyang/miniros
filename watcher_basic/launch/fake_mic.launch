@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="watcher_basic" type="voicejudge_server.py" name="mic" output="screen" />
+</launch>

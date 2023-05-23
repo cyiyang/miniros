@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="watcher_basic" type="master_bridge.py" name="bridge" output="screen" />
+</launch>

@@ -7,7 +7,6 @@ from actionlib_msgs.msg import GoalStatus
 import actionlib
 from actuator.srv import DestinationMsg, DestinationMsgRequest
 from actuator.srv import PermissionMsg,PermissionMsgResponse
-# from actuator.srv import ChangeTimeResult,ChangeTimeResultResponse,ChangeTimeResultRequest
 from tf.transformations import quaternion_from_euler
 from geometry_msgs.msg import Point, Pose, Quaternion
 import sys
@@ -19,13 +18,6 @@ from playsound import playsound
 def thread_CV():
     rospy.spin()
 
-# def thread_SCH():
-#     rospy.spin()
-
-# def thread_Broadcast(self):
-#     while not rospy.is_shutdown():
-#         self.location_pub.publish(self.status) #广播位置
-#         rospy.sleep(2)
 
 class CarActuator(object):
     def __init__(self):
@@ -35,10 +27,6 @@ class CarActuator(object):
         self.permission_server =rospy.Service("permission",PermissionMsg,self.actuator_dealCV_ask)
         rospy.loginfo("命令服务器正常启动")
 
-        # self.location_pub = rospy.Publisher("masterlocation",Int16,queue_size=10)
-
-        # self.changetime_server=rospy.Service("changetime",ChangeTimeResult,self.actuatot_dealSCH_ask)
-        # rospy.loginfo("Change服务器正常启动")
         # 订阅move_base服务器的消息
         self.move_base_client = actionlib.SimpleActionClient(
             "move_base", MoveBaseAction
@@ -83,16 +71,16 @@ class CarActuator(object):
             quaternions.append(q)
         # 创建特殊点列表
         point_ABC = list()
-        point_ABC.append(Pose(Point(0.42, 2.31, 0), quaternions[0]))  # A点,2.33点往上漂移
+        point_ABC.append(Pose(Point(0.42, 2.30, 0), quaternions[0]))  # A点,2.33点往上漂移
         point_ABC.append(Pose(Point(1.30, 2.75, 0), quaternions[1]))  # B点,75下漂
-        point_ABC.append(Pose(Point(1.28, 1.78, 0), quaternions[2]))  # C点
+        point_ABC.append(Pose(Point(1.26, 1.82, 0), quaternions[2]))  # C点
 
         point_1234 = list()
         point_1234.append(Pose(Point(0,0,0), quaternions[3]))           #特殊点保护
         point_1234.append(Pose(Point(-1.84, 2.26, 0), quaternions[4]))  # 1点2.27上漂,1.85太靠近外墙
-        point_1234.append(Pose(Point(-1.03, 1.75, 0), quaternions[5]))  # 2点,1.80上漂
-        point_1234.append(Pose(Point(-1.83, 1.33, 0), quaternions[6]))  # 3点,1.35上漂
-        point_1234.append(Pose(Point(-1.03, 0.90, 0), quaternions[7]))  # 4点
+        point_1234.append(Pose(Point(-1.03, 1.78, 0), quaternions[5]))  # 2点,1.80上漂
+        point_1234.append(Pose(Point(-1.85, 1.30, 0), quaternions[6]))  # 3点,1.35上漂
+        point_1234.append(Pose(Point(-1.03, 0.89, 0), quaternions[7]))  # 4点
 
         point_special = list()
         point_special.append(Pose(Point(0, 0, 0), quaternions[8]))  # 起点
@@ -105,10 +93,6 @@ class CarActuator(object):
         add_thread = threading.Thread(target=thread_CV)
         add_thread.start()
         rospy.loginfo("deal CV thread OK")
-
-        # add_thread = threading.Thread(target=thread_Broadcast)
-        # add_thread.start()
-        # rospy.loginfo("Broadcast thread OK")
 
         while not rospy.is_shutdown():
 
@@ -135,6 +119,7 @@ class CarActuator(object):
                     self.status = 5
                 else:
                     rospy.loginfo("配药失败")
+                    self.move_base_client.cancel_goal()     #取消当前目标导航点
                     self.status = 6
             elif self.status == 5:
                 newABC = self.responseToABC[self.mission_response.drug_location]
@@ -152,7 +137,8 @@ class CarActuator(object):
                 if self.actuator_move(goal) == True:
                     self.status = 8
                 else:
-                    rospy.loginfo("配药失败")
+                    rospy.loginfo("手写数字点失败")
+                    self.move_base_client.cancel_goal()     #取消当前目标导航点
                     self.status = 9
                 # else: #不需要修改，那就用牵引法
             elif self.status == 8:
@@ -170,6 +156,7 @@ class CarActuator(object):
                     self.status = 11
                 else:
                     rospy.loginfo("取药失败")
+                    self.move_base_client.cancel_goal()     #取消当前目标导航点
                     self.status = 12
             elif self.status == 11:
                 rospy.loginfo("到达取药区%d",self.mission_response.deliver_destination)
@@ -188,6 +175,7 @@ class CarActuator(object):
                     self.status = 14
                 else:
                     rospy.loginfo("前往起点失败")
+                    self.move_base_client.cancel_goal()     #取消当前目标导航点
                     self.status = 15
             elif self.status == 14:
                 rospy.loginfo("到达起点")
@@ -203,6 +191,7 @@ class CarActuator(object):
                     self.status = 17
                 else:
                     rospy.loginfo("前往1号运动点失败")
+                    self.move_base_client.cancel_goal()     #取消当前目标导航点
                     self.status = 18
             elif self.status == 17:
                 rospy.loginfo("到达运动点（配药区）")
@@ -218,6 +207,7 @@ class CarActuator(object):
                     self.status = 20
                 else:
                     rospy.loginfo("前往2号运动点失败")
+                    self.move_base_client.cancel_goal()     #取消当前目标导航点
                     self.status = 21
             elif self.status == 20:
                 rospy.loginfo("到达运动点（配药区）")
@@ -227,7 +217,7 @@ class CarActuator(object):
             else:
                 if(self.status<=15): #这些都是常规任务
                         if self.status != 15:  # 不是前往起点的错误，进入下一状态
-                            self.status += 1
+                            self.status -= 1
                         else:
                             self.status = 10  # 回退到上一状态，也就是前往送药区
                 else:
@@ -282,28 +272,6 @@ class CarActuator(object):
         self.mission_request.request_type = 3  # 请求包编号为“完成送药/1234”
         self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
        
-
-    # 向服务器上报已到达手写数字识别区，未增加
-    # def actuator_arriveHandNum(self):
-    #     self.mission_request.request_type = 4  # 请求包编号为“到达手写数字识别区”
-    #     self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
-        
-    # def actuatot_dealSCH_ask(self,req):
-    #     if(req.NeedToChange == 1) :   #需要修改请求
-    #         rospy.loginfo("接收到修改请求")
-    #         self.changetime_flag=1 
-    #     else:
-    #         self.changetime_flag=0
-
-    #     while not self.status == 8: #如果不满足状态，卡死
-    #         rospy.loginfo("change状态不满足")
-    #         rospy.sleep(10)
-    #         # if(self.status == 8):
-    #     resp = ChangeTimeResultResponse(True)#状态满足
-    #     return resp
-
-
-
     # 处理来自识别器的请求
     def actuator_dealCV_ask(self,req):
         if (req.request == 0) : #"想看请求"
@@ -328,8 +296,8 @@ class CarActuator(object):
         # 把目标位置发送给MoveBaseAction的服务器
         self.move_base_client.send_goal(goal)
         # 设定1分钟的时间限制
-        finished_within_time = self.move_base_client.wait_for_result(rospy.Duration(45))
-        # 如果一分钟之内没有到达，放弃目标
+        finished_within_time = self.move_base_client.wait_for_result(rospy.Duration(30))
+        # 如果30s没有成功，放弃
         if not finished_within_time:
             self.move_base_client.cancel_goal()
             if self.status == 4:  # 前往取药时失败
@@ -338,8 +306,8 @@ class CarActuator(object):
                 self.status = 9
             elif self.status == 10:  # 前往送药失败
                 self.status = 12
-            elif self.status == 13:  # 前往起点失败
-                self.status = 15
+            # elif self.status == 13:  # 前往起点失败
+            #     self.status = 15
             # return False
         else:
             state = self.move_base_client.get_state()
