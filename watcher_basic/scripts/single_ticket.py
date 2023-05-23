@@ -9,12 +9,13 @@ from tf.transformations import quaternion_from_euler
 from geometry_msgs.msg import Point, Pose, Quaternion
 from math import pi
 import os
+from std_msgs.msg import Bool
 
 class SendCar2Somewhere(object):
     def __init__(self):
         rospy.init_node("single_ticket")
         rospy.on_shutdown(self.SendCar2Somewhere_shutdown)
-
+        self.arrived_pub = rospy.Publisher("arrived",Bool,queue_size=10)
         self.move_base_client = actionlib.SimpleActionClient(
             "move_base", MoveBaseAction
         )
@@ -75,8 +76,12 @@ class SendCar2Somewhere(object):
 
             elif self.status == 5:
                 rospy.loginfo("前往手写数字点成功")
-                rospy.loginfo("开始清理")
+               
+                self.arrived_pub.publish(True)
                 self.move_base_client.unregister()
+                rospy.loginfo("睡眠5s，确保已经取消订阅")
+                rospy.sleep(5)
+                rospy.loginfo("开始清理")
                 os.system("rosnode kill /amcl")
                 os.system("rosnode kill /base_control")
                 os.system("rosnode kill /base_to_camera")
