@@ -7,7 +7,7 @@ import threading
 # sys.path.append("/home/ncut/scheduler_ws/devel/lib/python2.7/dist-packages")
 import rospy
 from scheduler import NeedToChangeStatus, RequestType, Scheduler, TargetStatus
-
+from SocketService import SocketServiceMaster
 from deliver_scheduler.srv import (
     ChangeTimeResult,
     ChangeTimeResultResponse,
@@ -16,6 +16,8 @@ from deliver_scheduler.srv import (
 )
 
 DEBUG = 0
+SLAVE_ADDR = "192.168.137.172"
+SLAVE_PORT = 12345
 
 
 def SchedulerServerMain():
@@ -84,26 +86,34 @@ def HandleRequests(req):
 
 
 def DrugCoolingTimeHandlerMain():
-    needToChangeService = rospy.ServiceProxy("changetime", ChangeTimeResult)
-    rospy.loginfo("[scheduler] 等待changetime服务...")
+    # ROS 版本
+    # needToChangeService = rospy.ServiceProxy("changetime", ChangeTimeResult)
+    rospy.loginfo("[scheduler] 等待cha#ngetime服务...")
+
+    # socket 版本
+    needToChangeService = SocketServiceMaster(
+        slave_addr=SLAVE_ADDR, slave_port=SLAVE_PORT
+    )
+    rospy.loginfo("[scheduler] 等待连接到slave...")
     # playsound("/home/EPRobot/Music/pick_up.mp3")
     needToChangeService.wait_for_service()
-    rospy.loginfo("[scheduler] 药物刷新时间检测启动!")
+    # rospy.loginfo("[scheduler] 药物刷新时间检测启动!")
     # playsound("/home/EPRobot/Music/dispense.mp3")
-    
+    rospy.loginfo("[scheduler] 成功连接到slave!")
+
     while not rospy.is_shutdown():
         need = scheduler.GetNeedToChangeStatus()
         if need != NeedToChangeStatus.DONT_CHANGE.value:
-            if need==NeedToChangeStatus.SPEED_UP.value:
+            if need == NeedToChangeStatus.SPEED_UP.value:
                 rospy.loginfo("[scheduler] 现在需要加快药物刷新")
-            if need==NeedToChangeStatus.SLOW_DOWN.value:
+            if need == NeedToChangeStatus.SLOW_DOWN.value:
                 rospy.loginfo("[scheduler] 现在需要减缓药物刷新")
             rospy.loginfo("[scheduler] 发出修改请求...")
-            response = needToChangeService.call(need)
+            change_success = needToChangeService.call(need)
             if need != scheduler.GetNeedToChangeStatus():
                 # 可能存在到达手写数字点后，已经不需要更新配送时间的情况
                 rospy.logwarn("[scheduler] 更新时间需求与发出请求时不同!")
-            if response.success:
+            if change_success:
                 rospy.loginfo("[scheduler] 修改成功!")
                 scheduler.UpdateDrugCoolingTime(need)
 
@@ -122,8 +132,8 @@ if __name__ == "__main__":
     s = rospy.Service("mission", DestinationMsg, HandleRequests)
     print("[scheduler] 调度器就绪!")
 
-    # drugCoolingTimeHandlerThread = threading.Thread(target=DrugCoolingTimeHandlerMain)
-    # # drugCoolingTimeHandlerThread.setDaemon(True)
-    # drugCoolingTimeHandlerThread.start()
+    drugCoolingTimeHandlerThread = threading.Thread(target=DrugCoolingTimeHandlerMain)
+    drugCoolingTimeHandlerThread.setDaemon(True)
+    drugCoolingTimeHandlerThread.start()
 
     SchedulerServerMain()
