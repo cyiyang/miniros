@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(actuator)
+project(watcher_basic)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -11,12 +11,12 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  message_generation
   move_base_msgs
   actionlib
   tf
   geometry_msgs
   actionlib_msgs
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -62,8 +62,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  DestinationMsg.srv
-  PermissionMsg.srv
+  VoiceJudgeMsg.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -110,8 +109,8 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES actuator
-  CATKIN_DEPENDS roscpp rospy std_msgs message_runtime tf geometry_msgs actionlib_msgs
+#  LIBRARIES watcher_basic
+ CATKIN_DEPENDS CATKIN_DEPENDS roscpp rospy std_msgs message_runtime tf geometry_msgs actionlib_msgs
 #  DEPENDS system_lib
 )
 
@@ -128,7 +127,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/actuator.cpp
+#   src/${PROJECT_NAME}/watcher_basic.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -139,7 +138,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/actuator_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/watcher_basic_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -166,11 +165,9 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/actuator_master.py
-  scripts/actuator_slave.py
-  scripts/mission_server.py
-  scripts/permission_client.py
-  scripts/Announcer.py
+  scripts/master_bridge.py
+  scripts/single_ticket.py
+  scripts/voicejudge_server.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -207,7 +204,7 @@ catkin_install_python(PROGRAMS
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_actuator.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_watcher_basic.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

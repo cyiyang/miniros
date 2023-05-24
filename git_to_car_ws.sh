@@ -17,20 +17,20 @@ if [ $? -eq 0 ]; then
     rsync -av --delete /home/$(whoami)/drug-deliverer/char_recognizer/ EPRobot@EPRobot:/home/EPRobot/robot_ws/src/char_recognizer/
     rsync -av --delete /home/$(whoami)/drug-deliverer/param/myparam/ EPRobot@EPRobot:/home/EPRobot/robot_ws/src/robot_navigation/param/
     rsync -av --delete /home/$(whoami)/drug-deliverer/send_goals/ EPRobot@EPRobot:/home/EPRobot/robot_ws/src/send_goals/
-    echo "[主车]成功将本地drug-deliverer仓库的修改同步到小车的工作空间"
+    echo "[Master]成功将本地drug-deliverer仓库的修改同步到小车的工作空间"
 else
-    echo "[主车]无法连接到小车，与小车的同步不会进行"
+    echo "[Master]无法连接到小车，与小车的同步不会进行"
 fi
 
 # 同步到副车
-ping -c 1 EPRobot1 > /dev/null
+ping -c 1 slave > /dev/null
 
 if [ $? -eq 0 ]; then
-    rsync -av --delete /home/$(whoami)/drug-deliverer/actuator/ EPRobot@EPRobot1:/home/EPRobot/robot_ws/src/actuator/
-    rsync -av --delete /home/$(whoami)/drug-deliverer/param/myparam/ EPRobot@EPRobot1:/home/EPRobot/robot_ws/src/robot_navigation/param/
-    rsync -av --delete /home/$(whoami)/drug-deliverer/send_goals/ EPRobot@EPRobot1:/home/EPRobot/robot_ws/src/send_goals/
-    echo "[副车]成功将本地drug-deliverer仓库的修改同步到小车的工作空间"
+    rsync -av --delete /home/$(whoami)/drug-deliverer/watcher_basic/ slave@slave:/home/slave/robot_ws/src/watcher_basic/
+    # rsync -av --delete /home/$(whoami)/drug-deliverer/param/myparam/ EPRobot@EPRobot1:/home/EPRobot/robot_ws/src/robot_navigation/param/
+    # rsync -av --delete /home/$(whoami)/drug-deliverer/send_goals/ EPRobot@EPRobot1:/home/EPRobot/robot_ws/src/send_goals/
+    echo "[Watcher]成功将本地drug-deliverer仓库的修改同步到小车的工作空间"
 else
-    echo "[副车]无法连接到小车，与小车的同步不会进行"
+    echo "[Watcher]无法连接到小车，与小车的同步不会进行"
 fi
 date
