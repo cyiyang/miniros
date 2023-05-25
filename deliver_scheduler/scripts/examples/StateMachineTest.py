@@ -18,4 +18,4 @@ class CoolingTime(StateMachine):
 sm = CoolingTime()
 print(sm.current_state.value)
 sm.send("SPEED_UP")
-print(sm.current_state.value=="speedUpState")
+print(sm.current_state.value == "speedUpState")

@@ -88,7 +88,7 @@ def HandleRequests(req):
 def DrugCoolingTimeHandlerMain():
     # ROS 版本
     # needToChangeService = rospy.ServiceProxy("changetime", ChangeTimeResult)
-    rospy.loginfo("[scheduler] 等待cha#ngetime服务...")
+    rospy.loginfo("[scheduler] 等待changetime服务...")
 
     # socket 版本
     needToChangeService = SocketServiceMaster(
