@@ -105,16 +105,16 @@ def DrugCoolingTimeHandlerMain():
         need = scheduler.GetNeedToChangeStatus()
         if need != NeedToChangeStatus.DONT_CHANGE.value:
             if need == NeedToChangeStatus.SPEED_UP.value:
-                rospy.loginfo("[scheduler] 现在需要加快药物刷新")
+                rospy.loginfo("[scheduler to watcher] 请减少配药时间！")
             if need == NeedToChangeStatus.SLOW_DOWN.value:
-                rospy.loginfo("[scheduler] 现在需要减缓药物刷新")
+                rospy.loginfo("[scheduler to watcher] 请增加配药时间！")
             rospy.loginfo("[scheduler] 发出修改请求...")
             change_success = needToChangeService.call(need)
             if need != scheduler.GetNeedToChangeStatus():
                 # 可能存在到达手写数字点后，已经不需要更新配送时间的情况
                 rospy.logwarn("[scheduler] 更新时间需求与发出请求时不同!")
             if change_success:
-                rospy.loginfo("[scheduler] 修改成功!")
+                rospy.loginfo("[watcher to scheduler] 修改成功!")
                 scheduler.UpdateDrugCoolingTime(need)
 
 
