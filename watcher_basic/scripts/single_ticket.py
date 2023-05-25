@@ -29,7 +29,7 @@ class SendCar2Somewhere(object):
         quaternions = list()
         euler_angles = (
             pi / 2,
-             0,
+            pi,
         )
         # 将上面的Euler angles转换成Quaternion的格式
         for angle in euler_angles:
@@ -38,8 +38,8 @@ class SendCar2Somewhere(object):
             quaternions.append(q)
         # 创建特殊点列表
         point_special = list()
-        point_special.append(Pose(Point(0.885, 2.6, 0), quaternions[0]))  # 第一运动点
-        point_special.append(Pose(Point(-0.4,3.7, 0), quaternions[1]))    # 手写数字终点
+        point_special.append(Pose(Point(0.6, 2.6, 0), quaternions[0]))  # 第一运动点
+        point_special.append(Pose(Point(-1.44,3.7, 0), quaternions[1]))    # 手写数字终点
         
         rospy.loginfo("初始化结束")
 
@@ -50,7 +50,7 @@ class SendCar2Somewhere(object):
                 goal.target_pose.header.frame_id = "map"
                 goal.target_pose.header.stamp = rospy.Time.now()
                 goal.target_pose.pose = point_special[0]
-                if self.actuator_move(goal) == True:
+                if self.SendCar2Somewhere_move(goal) == True:
                     self.status = 2
                 else:
                     rospy.loginfo("前往第一运动点失败")
@@ -67,7 +67,7 @@ class SendCar2Somewhere(object):
                 goal.target_pose.header.frame_id = "map"
                 goal.target_pose.header.stamp = rospy.Time.now()
                 goal.target_pose.pose = point_special[1]
-                if self.actuator_move(goal) == True:
+                if self.SendCar2Somewhere_move(goal) == True:
                     self.status = 5
                 else:
                     rospy.loginfo("手写数字点失败")
@@ -78,9 +78,7 @@ class SendCar2Somewhere(object):
                 rospy.loginfo("前往手写数字点成功")
                
                 self.arrived_pub.publish(True)
-                self.move_base_client.unregister()
-                rospy.loginfo("睡眠5s，确保已经取消订阅")
-                rospy.sleep(5)
+                rospy.sleep(2)
                 rospy.loginfo("开始清理")
                 os.system("rosnode kill /amcl")
                 os.system("rosnode kill /base_control")
@@ -110,6 +108,24 @@ class SendCar2Somewhere(object):
     def SendCar2Somewhere_shutdown(self):
         rospy.loginfo("Stop the robot")
         self.move_base_client.cancel_goal()     #取消当前目标导航点
+
+    def SendCar2Somewhere_move(self, goal):
+        # 把目标位置发送给MoveBaseAction的服务器
+        self.move_base_client.send_goal(goal)
+        # 设定1分钟的时间限制
+        finished_within_time = self.move_base_client.wait_for_result(rospy.Duration(30))
+        # 如果30s没有成功，放弃
+        if not finished_within_time:
+            self.move_base_client.cancel_goal()
+            rospy.loginfo("超时，已经取消任务")
+        else:
+            state = self.move_base_client.get_state()
+            if state == GoalStatus.SUCCEEDED:
+                rospy.loginfo("成功到达")
+                return True
+            else:
+                rospy.loginfo("没超时但失败")
+                return False
 
 if __name__ == "__main__":
     try:
