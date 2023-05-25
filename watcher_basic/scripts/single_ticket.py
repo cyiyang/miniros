@@ -76,7 +76,6 @@ class SendCar2Somewhere(object):
 
             elif self.status == 5:
                 rospy.loginfo("前往手写数字点成功")
-               
                 self.arrived_pub.publish(True)
                 rospy.sleep(2)
                 rospy.loginfo("开始清理")
