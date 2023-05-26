@@ -1,0 +1,6 @@
+project(digit_recognizer_demo)
+set(ncnn_DIR "/usr/lib/cmake/ncnn" CACHE PATH "/usr/lib/cmake/ncnn")
+find_package(ncnn REQUIRED)
+find_package(OpenCV REQUIRED)
+add_executable(${PROJECT_NAME} main.cpp)
+target_link_libraries(${PROJECT_NAME} ncnn ${OpenCV_LIBS})
