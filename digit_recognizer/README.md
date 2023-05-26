@@ -6,4 +6,13 @@
 
 创建文件夹 `build`, 进入 `build` 文件夹，执行 `cmake ..` 与 `make`.
 
-将 `yolox.param` 与 `yolox.bin` 放置在 `digit_recognizer_demo` 可执行文件的相同目录下，运行 `./digit_recognizer_demo`, 小车将从摄像头 0 读取视频流并进行实时识别。
+执行以下命令，链接到模型文件：
+
+```bash
+ln -s ../model/yolox.bin yolox.bin
+ln -s ../model/yolox.param yolox.param
+```
+
+运行 `./digit_recognizer_demo`, 小车将从摄像头 0 读取视频流并进行实时识别。
+
+也可以运行 `./digit_recognizer_demo [path2image]`, 识别单张图片。
