@@ -11,11 +11,12 @@ from math import pi
 import os
 from std_msgs.msg import Bool
 
+
 class SendCar2Somewhere(object):
     def __init__(self):
         rospy.init_node("single_ticket")
         rospy.on_shutdown(self.SendCar2Somewhere_shutdown)
-        self.arrived_pub = rospy.Publisher("arrived",Bool,queue_size=10)
+        self.arrived_pub = rospy.Publisher("arrived", Bool, queue_size=10)
         self.move_base_client = actionlib.SimpleActionClient(
             "move_base", MoveBaseAction
         )
@@ -39,8 +40,8 @@ class SendCar2Somewhere(object):
         # 创建特殊点列表
         point_special = list()
         point_special.append(Pose(Point(0.6, 2.6, 0), quaternions[0]))  # 第一运动点
-        point_special.append(Pose(Point(-1.44,3.7, 0), quaternions[1]))    # 手写数字终点
-        
+        point_special.append(Pose(Point(-1.44, 3.7, 0), quaternions[1]))  # 手写数字终点
+
         rospy.loginfo("初始化结束")
 
         while not rospy.is_shutdown():
@@ -54,12 +55,12 @@ class SendCar2Somewhere(object):
                     self.status = 2
                 else:
                     rospy.loginfo("前往第一运动点失败")
-                    self.move_base_client.cancel_goal()     #取消当前目标导航点
+                    self.move_base_client.cancel_goal()  # 取消当前目标导航点
                     self.status = 3
 
             elif self.status == 2:
                 rospy.loginfo("前往第一运动点成功")
-                self.status = 4 
+                self.status = 4
 
             elif self.status == 4:
                 rospy.loginfo("前往手写数字识别区")
@@ -71,7 +72,7 @@ class SendCar2Somewhere(object):
                     self.status = 5
                 else:
                     rospy.loginfo("手写数字点失败")
-                    self.move_base_client.cancel_goal()     #取消当前目标导航点
+                    self.move_base_client.cancel_goal()  # 取消当前目标导航点
                     self.status = 6
 
             elif self.status == 5:
@@ -96,18 +97,22 @@ class SendCar2Somewhere(object):
                 os.system("rosnode kill /robot_state_publisher")
                 os.system("rosnode kill /single_ticket")
                 rospy.loginfo("全部节点已经清理,开始亡语")
-                os.system("") #启动yolo
+                # 启动 Yolo
+                path = os.path.expanduser(
+                    "~/drug-deliverer/drug-deliverer/digit_recognizer/build"
+                )
+                os.chdir(path)
+                os.system("./digit_recognizer_demo")
                 exit()
             else:
-                #处理失败
-                self.move_base_client.cancel_goal()     #取消导航
-                self.status=self.status-2 #重新发布
-
+                # 处理失败
+                self.move_base_client.cancel_goal()  # 取消导航
+                self.status = self.status - 2  # 重新发布
 
     # 程序退出执行
     def SendCar2Somewhere_shutdown(self):
         rospy.loginfo("Stop the robot")
-        self.move_base_client.cancel_goal()     #取消当前目标导航点
+        self.move_base_client.cancel_goal()  # 取消当前目标导航点
 
     def SendCar2Somewhere_move(self, goal):
         # 把目标位置发送给MoveBaseAction的服务器
@@ -127,9 +132,10 @@ class SendCar2Somewhere(object):
                 rospy.loginfo("没超时但失败")
                 return False
 
+
 if __name__ == "__main__":
     try:
-       SendCar2Somewhere()
+        SendCar2Somewhere()
     except rospy.ROSInterruptException:
         rospy.loginfo("程序意外退出")
         pass
