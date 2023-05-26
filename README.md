@@ -9,7 +9,9 @@ rosnode kill -a
 roslaunch robot_navigation navigation_rviz.launch
 * 车不动调参
 修改move_base.launch文件，将cmd_vel话题重命名（打开文件一看就懂）
-* 编写的功能包
+* 观察系统结构
+rosrun rqt_graph rqt_graph
+* 编写的功能包(Master)
  * roslaunch usb_cam usb_cam-test.launch #有报错是正常的
  * roslaunch robot_navigation robot_navigation.launch
  * roslaunch actuator car0.launch #主车
@@ -17,6 +19,9 @@ roslaunch robot_navigation navigation_rviz.launch
  * roslaunch char_recognizer char_recognizer_fake.launch    # 假图
  * roslaunch deliver_scheduler scheduler.launch
  * roslaunch board_reminder board_reminder.launch
+* 编写的功能包(Watcher)
+ * roslaunch watcher_basic single_ticket.launch 
+ * roslaunch watcher_basic bridge.launch  
 
 
 # map参数
@@ -36,4 +41,4 @@ roslaunch robot_navigation navigation_rviz.launch
 | 2点   |(42,77.5)   |(-1.03,1.63)  |(2100,3875)|
 | 3点   |(24,87.5)   |(-1.93,1.13)  |(1200,4375)|
 | 4点   |(42.97.5)   |(-1.03,0.63)  |(2100,4875)|
-| 手写数字|()|(-0.28, 3.78)|()|
+| 暂停点|()|(-0.28, 3.78)|()|

@@ -1,0 +1,21 @@
+global_costmap:
+  global_frame: map #全局代价地图需要在哪个坐标系下运行
+  robot_base_frame: base_footprint #在全局代价地图中机器人本体的基坐标系。
+  update_frequency: 5.0 #在全局代价地图中机器人本体的基坐标系。
+  publish_frequency: 5.0 #全局代价地图的发布频率，只用于Rviz可视化，这个参数没必要太大
+  # static_map: true  #配置是否使用map_server提供的地图来初始化，因为全局地图都是静态的，一般都设置为true
+  #上面那个删掉来消除警告
+
+  rolling_window: false #张聿璁加入的，是否在机器人移动过程中需要滚动窗口，始终保持机器人在当前窗口中心位置，一般false
+  resolution: 0.05 #栅格地图的分辨率，该分辨率可以从加载的地图相对应的配置文件中获取到
+
+  cost_scaling_factor:  17  #为全局路径规划器服务
+  inflation_radius: 1       #为全局路径规划器服务
+
+  transform_tolerance: 0.5 #坐标系间的转换可以忍受的最大延时
+  plugins:
+    - {name: static_layer,            type: "costmap_2d::StaticLayer"}
+    - {name: obstacle_layer,          type: "costmap_2d::VoxelLayer"}
+    - {name: inflation_layer,         type: "costmap_2d::InflationLayer"}
+
+
