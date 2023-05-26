@@ -95,7 +95,8 @@ class SendCar2Somewhere(object):
                 os.system("rosnode kill /move_base")
                 os.system("rosnode kill /robot_state_publisher")
                 os.system("rosnode kill /single_ticket")
-                rospy.loginfo("全部节点已经清理")
+                rospy.loginfo("全部节点已经清理,开始亡语")
+                os.system("") #启动yolo
                 exit()
             else:
                 #处理失败
