@@ -375,10 +375,15 @@ static void draw_objects(const cv::Mat &bgr, const std::vector<Object> &objects)
     cv::waitKey(0);
 }
 
+bool compareByX(const Object &obj1, const Object &obj2)
+{
+    return obj1.rect.x < obj2.rect.x;
+}
+
 int main(int argc, char **argv)
 {
     bool use_camera = true;
-    bool display_result = true;
+    bool display_result = false;
     cv::Mat m;
     cv::VideoCapture cap(0); // 打开默认摄像头
     static const char *class_names[] = {
@@ -446,6 +451,15 @@ int main(int argc, char **argv)
         // 因此, m 一定是有效的图片
 
         detect_yolox(m, objects, yolox);
+
+        std::sort(objects.begin(), objects.end(), compareByX);
+        for (size_t i = 0; i < objects.size(); i++)
+        {
+            const Object &obj = objects[i];
+            fprintf(stdout, "%d, ", obj.label);
+            // std::cout << "x: " << obj.rect.x << ", y: " << obj.rect.y << std::endl;
+        }
+        fprintf(stdout, "\n");
 
         // 将结果进行绘制
         if (display_result)
