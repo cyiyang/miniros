@@ -12,7 +12,6 @@ from geometry_msgs.msg import Point, Pose, Quaternion
 import sys
 from math import pi
 import threading
-from std_msgs.msg import Int16
 from playsound import playsound
 
 def thread_CV():
@@ -259,7 +258,6 @@ class CarActuator(object):
 
     # 向服务器上报已取药
     def actuator_updateABC(self):
-        # self.announcer.arriveDispensingPoint()
         playsound("/home/EPRobot/Music/dispense.mp3")
         self.mission_request.request_type = 2  # 请求包编号为“完成配药/ABC”
         self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)
@@ -267,7 +265,6 @@ class CarActuator(object):
  
     # 向服务器上报已送药
     def actuator_update1234(self):
-        # self.announcer.arrivePickUpPoint()
         playsound("/home/EPRobot/Music/pick_up.mp3")
         self.mission_request.request_type = 3  # 请求包编号为“完成送药/1234”
         self.mission_client.call(self.mission_request.car_no, self.mission_request.request_type,0,0)

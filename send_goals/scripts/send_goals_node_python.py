@@ -39,7 +39,7 @@ def client():
         quaternions.append(q)
     
     point_test = list()
-    point_test.append(Pose(Point(0.40, 2.3, 0), quaternions[0]))  # A点
+    point_test.append(Pose(Point(1.4, 2.3, 0), quaternions[0]))  # A点
     point_test.append(Pose(Point(1.28, 2.71, 0), quaternions[1]))  # B点
     point_test.append(Pose(Point(1.28, 1.80, 0), quaternions[2]))  # C点
 

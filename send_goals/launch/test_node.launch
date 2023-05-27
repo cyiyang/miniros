@@ -1,3 +1,3 @@
 <launch>
-    <node pkg="send_goals" type="send_goals_node_python.py" args= "6" name="simple_goal" output="screen" />
+    <node pkg="send_goals" type="send_goals_node_python.py" args= "0" name="simple_goal" output="screen" />
 </launch>
