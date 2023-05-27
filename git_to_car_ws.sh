@@ -8,7 +8,7 @@
 # rsync -av --delete /home/$(whoami)/drug-deliverer/board_reminder/ /home/$(whoami)/robot_ws/src/board_reminder/
 
 # 从git同步到小车
-ping -c 1 EPRobot0 > /dev/null
+ping -c 1 EPRobot > /dev/null
 
 if [ $? -eq 0 ]; then
     rsync -av --delete /home/$(whoami)/drug-deliverer/actuator/ EPRobot@EPRobot:/home/EPRobot/robot_ws/src/actuator/

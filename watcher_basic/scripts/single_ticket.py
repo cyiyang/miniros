@@ -16,7 +16,7 @@ from std_msgs.msg import Bool
 from tf.transformations import quaternion_from_euler
 
 MASTER_IP = "192.168.196.23"
-CAN_GO_PORT = 115114
+CAN_GO_PORT = 11511
 
 # DEBUGGING = True 状态下，副车不会等待主车
 DEBUGGING = False
@@ -152,12 +152,15 @@ def wait_for_can_go(master_ip, can_go_port):
     server_address = (master_ip, can_go_port)
 
     connected = False
-    while (not rospy.is_shutdown()) and (not connected):
-        try:
-            client_socket.connect(server_address)
-        except:
-            rospy.loginfo("连接到主车失败,正在重试...")
-            time.sleep(1)
+    client_socket.connect(server_address)
+
+    # while (not rospy.is_shutdown()) and (not connected):
+    #     try:
+    #         client_socket.connect(server_address)
+    #     except Exception as e:
+    #         print(e)
+    #         rospy.loginfo("连接到主车失败,正在重试...")
+    #         time.sleep(1)
 
     can_go = False
 

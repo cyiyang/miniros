@@ -28,7 +28,7 @@ def thread_CV():
     rospy.spin()
 
 
-CAN_GO_PORT = 115114
+CAN_GO_PORT = 11511
 
 
 class LetSlaveGo(object):
@@ -70,6 +70,7 @@ class LetSlaveGo(object):
 class CarActuator(object):
     def __init__(self):
         rospy.init_node("act_master")
+        let_slave_go = LetSlaveGo(CAN_GO_PORT)
         rospy.on_shutdown(self.actuator_shutdown)
 
         self.permission_server = rospy.Service(
@@ -146,7 +147,6 @@ class CarActuator(object):
         add_thread.start()
         rospy.loginfo("deal CV thread OK")
 
-        let_slave_go = LetSlaveGo(CAN_GO_PORT)
 
         while not rospy.is_shutdown():
             # 请求任务相关
