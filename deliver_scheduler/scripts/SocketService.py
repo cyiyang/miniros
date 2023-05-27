@@ -23,7 +23,7 @@ class SocketServiceMaster(object):
     def call(self, need=0):
         if not self.use_socket:
             time.sleep(self.time_to_return)
-            return
+            return True
 
         # 使用socket
         if not self.socket:

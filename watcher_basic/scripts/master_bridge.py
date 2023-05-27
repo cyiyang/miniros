@@ -10,19 +10,15 @@ from std_msgs.msg import Bool
 
 def thread_arrived():
     stop_threads = False 
-    # global stop_threads = False 
-    while not stop_threads:
-        rospy.spin()
+    while True:
+        rospy.spin()#阻塞在这里了，无法回收
+
 
 
 #运行在从车上的socket_server
 class bridge_socket(object):
     def __init__(self) :
         rospy.init_node("bridge")
-        self.voicejudge_client = rospy.ServiceProxy("voicejudge", VoiceJudgeMsg)
-        self.voicejudge_client.wait_for_service()
-        rospy.loginfo("连上voicejudge 服务器了")
-        self.arrived_pub = rospy.Publisher("arrived",Bool,queue_size=10)
         self.arrived_sub = rospy.Subscriber("arrived",Bool,CarArrived,queue_size=10)
         self.arrived_flag = False #false没到，true到了
         add_thread = threading.Thread(target=thread_arrived)
@@ -38,23 +34,21 @@ class bridge_socket(object):
             msg_data = json.loads(file_msg)
             #在这里开始判断车到没到
             while not self.arrived_flag:
+                rospy.loginfo("等待车辆到达")
+                rospy.sleep(1)
                 pass
             if(msg_data.get("NeedToChange") ==True):
-                rospy.loginfo("接收到Need2Change")
-                self.voicejudge_respon=self.voicejudge_client.call(True)              
-                if(self.voicejudge_respon.success): #成功
-                    file_msg = {"Success":True}
-                    conn.sendall(json.dumps(file_msg))  # 发送传输需要的数据
-                    rospy.loginfo("[Watcher]已经发送了OK")
-                else: #失败             
-                    file_msg = {"Success":False}
-                    conn.sendall(json.dumps(file_msg))  # 发送传输需要的数据
-                    rospy.loginfo("[Watcher]已经发送了False")
+                rospy.loginfo("接收到Need2Change") 
+                file_msg = {"Success":True}
+                conn.sendall(json.dumps(file_msg))  # 发送传输需要的数据
+                rospy.loginfo("[Watcher]已经发送了OK")
+
 
         def CarArrived(pub_info):
             rospy.loginfo(pub_info)
             self.arrived_flag = True
             if (pub_info): #为真，车已经到了
+                rospy.loginfo("bridge启动,车辆已到达")
                 self.arrived_sub.unregister() #取消订阅
                 rospy.loginfo("已经取消订阅")
                 global stop_threads

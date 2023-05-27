@@ -215,7 +215,8 @@ class CarActuator(object):
                     self.status = 12
             elif self.status == 11:
                 rospy.loginfo("到达取药区%d", self.mission_response.deliver_destination)
-                let_slave_go.arrived()
+                if not let_slave_go.first_arrived:
+                    let_slave_go.arrived()
                 self.actuator_update1234()
                 self.status = 13
 

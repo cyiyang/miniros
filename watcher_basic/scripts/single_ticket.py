@@ -26,7 +26,7 @@ class SendCar2Somewhere(object):
     def __init__(self):
         rospy.init_node("single_ticket")
         rospy.on_shutdown(self.SendCar2Somewhere_shutdown)
-        self.arrived_pub = rospy.Publisher("arrived", Bool, queue_size=10)
+        # self.arrived_pub = rospy.Publisher("arrived", Bool, queue_size=10)
         self.move_base_client = actionlib.SimpleActionClient(
             "move_base", MoveBaseAction
         )
@@ -90,7 +90,8 @@ class SendCar2Somewhere(object):
 
             elif self.status == 5:
                 rospy.loginfo("前往手写数字点成功")
-                self.arrived_pub.publish(True)
+                # self.arrived_pub.publish(True)
+                # rospy.loginfo("bridge可以启动")
                 rospy.sleep(2)
                 rospy.loginfo("开始清理")
                 os.system("rosnode kill /amcl")
