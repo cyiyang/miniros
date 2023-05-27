@@ -105,9 +105,9 @@ def DrugCoolingTimeHandlerMain():
         need = scheduler.GetNeedToChangeStatus()
         if need != NeedToChangeStatus.DONT_CHANGE.value:
             if need == NeedToChangeStatus.SPEED_UP.value:
-                rospy.loginfo("[scheduler to watcher] 请减少配药时间！")
+                rospy.logwarn("[scheduler to watcher] 请减少配药时间！")
             if need == NeedToChangeStatus.SLOW_DOWN.value:
-                rospy.loginfo("[scheduler to watcher] 请增加配药时间！")
+                rospy.logwarn("[scheduler to watcher] 请增加配药时间！")
             rospy.loginfo("[scheduler] 发出修改请求...")
             change_success = needToChangeService.call(need)
             if need != scheduler.GetNeedToChangeStatus():
