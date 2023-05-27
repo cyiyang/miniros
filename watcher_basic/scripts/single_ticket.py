@@ -49,8 +49,8 @@ class SendCar2Somewhere(object):
             quaternions.append(q)
         # 创建特殊点列表
         point_special = list()
-        point_special.append(Pose(Point(0.6, 2.6, 0), quaternions[0]))  # 第一运动点
-        point_special.append(Pose(Point(-1.44, 3.7, 0), quaternions[1]))  # 手写数字终点
+        point_special.append(Pose(Point(1.4, 2.3, 0), quaternions[0]))  # 第一运动点
+        point_special.append(Pose(Point(-0.75,3.92, 0), quaternions[1]))  # 手写数字终点
 
         rospy.loginfo("初始化结束")
 
@@ -111,11 +111,11 @@ class SendCar2Somewhere(object):
                 os.system("rosnode kill /single_ticket")
                 rospy.loginfo("全部节点已经清理,开始亡语")
                 # 启动 Yolo
-                path = os.path.expanduser(
-                    "~/drug-deliverer/drug-deliverer/digit_recognizer/build"
-                )
-                os.chdir(path)
-                os.system("./digit_recognizer_demo")
+                # path = os.path.expanduser(
+                #     "~/drug-deliverer/drug-deliverer/digit_recognizer/build"
+                # )
+                # os.chdir(path)
+                # os.system("./digit_recognizer_demo")
                 exit()
             else:
                 # 处理失败
