@@ -1,15 +1,25 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import rospy
-from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from actionlib_msgs.msg import GoalStatus
-import actionlib
-from tf.transformations import quaternion_from_euler
-from geometry_msgs.msg import Point, Pose, Quaternion
-from math import pi
+import json
 import os
+import socket
+import time
+from math import pi
+
+import actionlib
+import rospy
+from actionlib_msgs.msg import GoalStatus
+from geometry_msgs.msg import Point, Pose, Quaternion
+from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from std_msgs.msg import Bool
+from tf.transformations import quaternion_from_euler
+
+MASTER_IP = "192.168.196.23"
+CAN_GO_PORT = 115114
+
+# DEBUGGING = True 状态下，副车不会等待主车
+DEBUGGING = False
 
 
 class SendCar2Somewhere(object):
@@ -43,6 +53,9 @@ class SendCar2Somewhere(object):
         point_special.append(Pose(Point(-1.44, 3.7, 0), quaternions[1]))  # 手写数字终点
 
         rospy.loginfo("初始化结束")
+
+        if not DEBUGGING:
+            wait_for_can_go(MASTER_IP, CAN_GO_PORT)
 
         while not rospy.is_shutdown():
             if self.status == 1:
@@ -131,6 +144,37 @@ class SendCar2Somewhere(object):
             else:
                 rospy.loginfo("没超时但失败")
                 return False
+
+
+def wait_for_can_go(master_ip, can_go_port):
+    rospy.loginfo("等待连接到主车can_go...")
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_address = (master_ip, can_go_port)
+
+    connected = False
+    while (not rospy.is_shutdown()) and (not connected):
+        try:
+            client_socket.connect(server_address)
+        except:
+            rospy.loginfo("连接到主车失败,正在重试...")
+            time.sleep(1)
+
+    can_go = False
+
+    rospy.loginfo("等待主车到达取药点(1234)...")
+    while not rospy.is_shutdown() and not can_go:
+        received_data = client_socket.recv(1024)
+
+        # 解析JSON数据
+        json_data = received_data.decode("utf-8")
+        data = json.loads(json_data)
+
+        # 获取can_go的值
+        can_go = data.get("can_go")
+        rospy.loginfo("接收到can_go: " + str(can_go))
+
+    rospy.loginfo("主车到达取药点,副车可以启动")
+    client_socket.close()
 
 
 if __name__ == "__main__":
