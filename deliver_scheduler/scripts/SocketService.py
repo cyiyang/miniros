@@ -37,9 +37,13 @@ class SocketServiceMaster(object):
         # 创建套接字对象
         slave_ready_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_address = (self.slave_addr, self.slave_ready_port)
+        print("等待连接到slave...")
         slave_ready_socket.connect(server_address)
+        print("成功连接到slave!")
+
 
         # 接收数据
+        print("正在接收数据...")
         received_data = slave_ready_socket.recv(1024)
 
         # 解析JSON数据

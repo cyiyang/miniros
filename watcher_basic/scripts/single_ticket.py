@@ -23,6 +23,9 @@ NOTIFY_SCHEDULER_PORT = 11515
 # DEBUGGING = True 状态下，副车不会等待主车
 DEBUGGING = False
 
+# 到达手写数字点标志位，当其为 True, 允许主车调整配送时间
+arrived_digit_point = False
+
 
 class SendCar2Somewhere(object):
     def __init__(self):
@@ -57,12 +60,12 @@ class SendCar2Somewhere(object):
         rospy.loginfo("初始化结束")
 
         if not DEBUGGING:
-            wait_for_can_go(MASTER_IP, CAN_GO_PORT)
             self.notify_scheduler_thread = threading.Thread(
-                target=notify_scheduler_thread_main
+                target=notify_scheduler_thread_main, args=(NOTIFY_SCHEDULER_PORT,)
             )
             self.notify_scheduler_thread.setDaemon(True)
             self.notify_scheduler_thread.start()
+            wait_for_can_go(MASTER_IP, CAN_GO_PORT)
 
         while not rospy.is_shutdown():
             if self.status == 1:
@@ -97,6 +100,11 @@ class SendCar2Somewhere(object):
 
             elif self.status == 5:
                 rospy.loginfo("前往手写数字点成功")
+
+                # 丑陋的实现
+                global arrived_digit_point
+                arrived_digit_point = True
+
                 # self.arrived_pub.publish(True)
                 # rospy.loginfo("bridge可以启动")
                 rospy.sleep(2)
@@ -197,12 +205,16 @@ def notify_scheduler_thread_main(listen_port):
     server_socket.bind(server_address)
 
     # 监听连接
+    rospy.loginfo("等待scheduler连接...")
     server_socket.listen(1)
 
     # 接受连接
-    rospy.loginfo("等待scheduler连接...")
     client_socket, client_address = server_socket.accept()
     rospy.loginfo("接收到scheduler连接!")
+
+    # 等待到达手写数字点
+    while not rospy.is_shutdown() and not arrived_digit_point:
+        pass
 
     # 准备要发送的JSON数据
     data = {"slave_ready": True}

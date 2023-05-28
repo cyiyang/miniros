@@ -180,6 +180,7 @@ class Scheduler:
             for request in self.queue:
                 if request["requestType"] == "A":
                     haveRequestForA = True
+                    break
             if self.GetRemainDrug("A") <= 0:
                 noRemainForA = True
             else:

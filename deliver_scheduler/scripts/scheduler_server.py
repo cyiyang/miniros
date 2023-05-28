@@ -18,6 +18,7 @@ from deliver_scheduler.srv import (
 DEBUG = 0
 SLAVE_ADDR = "192.168.137.172"
 SLAVE_PORT = 12345
+SLAVE_READY_PORT = 11515
 
 
 def SchedulerServerMain():
@@ -92,7 +93,7 @@ def DrugCoolingTimeHandlerMain():
 
     # socket 版本
     needToChangeService = SocketServiceMaster(
-        slave_addr=SLAVE_ADDR, slave_port=SLAVE_PORT
+        slave_addr=SLAVE_ADDR, slave_port=SLAVE_PORT, slave_ready_port=SLAVE_READY_PORT
     )
     rospy.loginfo("[scheduler] 等待连接到slave...")
     # playsound("/home/EPRobot/Music/pick_up.mp3")
