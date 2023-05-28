@@ -218,9 +218,11 @@ class Scheduler:
                 if not self.DEBUG:
                     print("不允许的状态转换!")
                 else:
+                    # 避免程序直接退出
                     raise ValueError("不允许的状态转换!")
                 return False
             for timer in self.timers:
+                # 在当前的基础上以 50% 的比率提高或降低三个配药窗口的配送周期，即变为原时间的 1 - 0.5 = 0.5 倍
                 timer.setRemainTime(timer.getRemainTime() / 2.0)
                 timer.setNewInterval(timer.getReloadInterval() / 2.0)
         elif needToChangeStatus == NeedToChangeStatus.SLOW_DOWN.value:
@@ -230,8 +232,9 @@ class Scheduler:
                 print("不允许的状态转换!")
                 return False
             for timer in self.timers:
-                timer.setRemainTime(timer.getRemainTime() * 2)
-                timer.setNewInterval(timer.getReloadInterval() * 2)
+                # 在当前的基础上以 50% 的比率提高或降低三个配药窗口的配送周期，即提升至原时间的 1 + 0.5 = 1.5 倍
+                timer.setRemainTime(timer.getRemainTime() * (1 + 0.5))
+                timer.setNewInterval(timer.getReloadInterval() * (1 + 0.5))
 
     def ForgiveCurrentTask(self, car_no):
         return

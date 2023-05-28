@@ -3,7 +3,7 @@ ROS 破车的代码仓库
 # 常用命令
 * 调参工具
 rosrun rqt_reconfigure rqt_reconfigure
-* 杀死所有节点 
+* 杀死所有节点
 rosnode kill -a
 * 打开rviz观察路径
 roslaunch robot_navigation navigation_rviz.launch
@@ -20,8 +20,9 @@ rosrun rqt_graph rqt_graph
  * roslaunch deliver_scheduler scheduler.launch
  * roslaunch board_reminder board_reminder.launch
 # 编写的功能包(Watcher)
- * roslaunch watcher_basic single_ticket.launch 
- * roslaunch watcher_basic bridge.launch  
+ * roslaunch robot_navigation robot_navigation.launch
+ * roslaunch watcher_basic single_ticket.launch
+ * roslaunch watcher_basic bridge.launch
 
 
 # map参数
