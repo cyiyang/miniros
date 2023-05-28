@@ -5,6 +5,7 @@ import json
 import os
 import socket
 import time
+import threading
 from math import pi
 
 import actionlib
@@ -17,6 +18,7 @@ from tf.transformations import quaternion_from_euler
 
 MASTER_IP = "192.168.196.23"
 CAN_GO_PORT = 11511
+NOTIFY_SCHEDULER_PORT = 11515
 
 # DEBUGGING = True 状态下，副车不会等待主车
 DEBUGGING = False
@@ -50,12 +52,17 @@ class SendCar2Somewhere(object):
         # 创建特殊点列表
         point_special = list()
         point_special.append(Pose(Point(1.4, 2.3, 0), quaternions[0]))  # 第一运动点
-        point_special.append(Pose(Point(-0.75,3.92, 0), quaternions[1]))  # 手写数字终点
+        point_special.append(Pose(Point(-0.75, 3.92, 0), quaternions[1]))  # 手写数字终点
 
         rospy.loginfo("初始化结束")
 
         if not DEBUGGING:
             wait_for_can_go(MASTER_IP, CAN_GO_PORT)
+            self.notify_scheduler_thread = threading.Thread(
+                target=notify_scheduler_thread_main
+            )
+            self.notify_scheduler_thread.setDaemon(True)
+            self.notify_scheduler_thread.start()
 
         while not rospy.is_shutdown():
             if self.status == 1:
@@ -179,6 +186,34 @@ def wait_for_can_go(master_ip, can_go_port):
 
     rospy.loginfo("主车到达取药点,副车可以启动")
     client_socket.close()
+
+
+def notify_scheduler_thread_main(listen_port):
+    # 创建套接字对象
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_address = ("0.0.0.0", listen_port)
+
+    # 绑定地址和端口
+    server_socket.bind(server_address)
+
+    # 监听连接
+    server_socket.listen(1)
+
+    # 接受连接
+    rospy.loginfo("等待scheduler连接...")
+    client_socket, client_address = server_socket.accept()
+    rospy.loginfo("接收到scheduler连接!")
+
+    # 准备要发送的JSON数据
+    data = {"slave_ready": True}
+    json_data = json.dumps(data)
+
+    # 发送JSON数据
+    client_socket.send(json_data.encode("utf-8"))
+
+    # 关闭连接
+    client_socket.close()
+    server_socket.close()
 
 
 if __name__ == "__main__":

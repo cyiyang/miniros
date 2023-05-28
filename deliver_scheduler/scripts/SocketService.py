@@ -6,22 +6,60 @@ import time
 
 
 class SocketServiceMaster(object):
-    def __init__(self, slave_addr, slave_port, use_socket=False, time_to_return=5):
+    def __init__(
+        self,
+        slave_addr,
+        slave_port,
+        slave_ready_port,
+        use_full_socket=False,
+        time_to_return=5,
+    ):
         self.slave_addr = slave_addr
+
+        # slave_port 目前没有作用
         self.slave_port = slave_port
         self.socket = None
 
-        # 如果不采用socket,wait_for_service将立即返回,call方法将等待time_to_return秒后返回
-        self.use_socket = use_socket
+        # slave 向 sch@master 汇报到达手写数字点的端口
+        self.slave_ready_port = slave_ready_port
+
+        # 如果不采用socket, wait_for_service 将立即返回, call 方法将等待 time_to_return 秒后返回
+        self.use_full_socket = use_full_socket
         self.time_to_return = time_to_return
 
     def wait_for_service(self):
-        if self.use_socket:
+        if self.use_full_socket:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((self.slave_addr, self.slave_port))
 
+        # 等待副车上线并到达手写数字点
+
+        # 创建套接字对象
+        slave_ready_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_address = (self.slave_addr, self.slave_ready_port)
+        slave_ready_socket.connect(server_address)
+
+        # 接收数据
+        received_data = slave_ready_socket.recv(1024)
+
+        # 解析JSON数据
+        json_data = received_data.decode("utf-8")
+        data = json.loads(json_data)
+
+        # 获取 slave_ready 的值
+        self.slave_ready = data.get("slave_ready")
+
+        # 打印 slave_ready 的值
+        print("slave_ready:", self.slave_ready)
+
+        # 关闭连接
+        slave_ready_socket.close()
+
     def call(self, need=0):
-        if not self.use_socket:
+        if not self.slave_ready:
+            raise RuntimeError("Slave未到达手写数字点")
+
+        if not self.use_full_socket:
             time.sleep(self.time_to_return)
             return True
 
