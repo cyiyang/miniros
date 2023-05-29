@@ -168,7 +168,14 @@ def wait_for_can_go(master_ip, can_go_port):
     server_address = (master_ip, can_go_port)
 
     connected = False
-    client_socket.connect(server_address)
+    while (not rospy.is_shutdown()) and (not connected):
+        try:
+            client_socket.connect(server_address)
+            connected = True
+        except socket.error as e:
+            print("连接失败:", e)
+            time.sleep(1)  # 等待 5 秒后重新连接
+            print("正在重连...")
 
     # while (not rospy.is_shutdown()) and (not connected):
     #     try:

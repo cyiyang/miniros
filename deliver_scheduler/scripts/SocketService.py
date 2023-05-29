@@ -38,9 +38,15 @@ class SocketServiceMaster(object):
         slave_ready_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_address = (self.slave_addr, self.slave_ready_port)
         print("等待连接到slave...")
-        slave_ready_socket.connect(server_address)
+        while True:
+            try:
+                slave_ready_socket.connect(server_address)
+                break
+            except socket.error as e:
+                print("连接失败:", e)
+                print("等待 5 秒后重新连接")
+                time.sleep(5)  # 等待 5 秒后重新连接
         print("成功连接到slave!")
-
 
         # 接收数据
         print("正在接收数据...")

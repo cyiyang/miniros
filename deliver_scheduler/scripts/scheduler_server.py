@@ -113,12 +113,14 @@ def DrugCoolingTimeHandlerMain():
             change_success = needToChangeService.call(need)
             if need != scheduler.GetNeedToChangeStatus():
                 # 可能存在到达手写数字点后，已经不需要更新配送时间的情况
+                # TODO 存在bug: 当小车第一轮有 2A 需求时，
                 rospy.logwarn("[scheduler] 更新时间需求与发出请求时不同!")
                 rospy.logwarn("[scheduler] 发出请求时: %d", need)
                 rospy.logwarn("[scheduler] 当前: %d", scheduler.GetNeedToChangeStatus())
             if change_success:
-                rospy.logwarn("[watcher to scheduler] 修改成功!")
                 scheduler.UpdateDrugCoolingTime(need)
+                rospy.logwarn("[watcher to scheduler] 修改成功!")
+                print("当前状态:" + str(scheduler.coolingTimeStateMachine.current_state.value))
 
 
 if __name__ == "__main__":
