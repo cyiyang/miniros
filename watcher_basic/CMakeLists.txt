@@ -167,6 +167,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   scripts/master_bridge.py
   scripts/single_ticket.py
+  scripts/single_ticket_test.py
   scripts/voicejudge_server.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

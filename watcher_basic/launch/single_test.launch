@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="watcher_basic" type="single_ticket_test.py" name="single_ticket" output="screen" />
+</launch>

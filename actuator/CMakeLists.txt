@@ -167,6 +167,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   scripts/actuator_master.py
+  scripts/actuator_test.py
   scripts/actuator_slave.py
   scripts/mission_server.py
   scripts/permission_client.py

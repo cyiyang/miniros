@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="actuator" type="actuator_test.py" args= "0" name="act_master" output="screen" />
+</launch>
