@@ -1,3 +1,0 @@
-<launch>
-    <node pkg="actuator" type="actuator_slave.py" args= "1" name="act_slave" output="screen" />
-</launch>

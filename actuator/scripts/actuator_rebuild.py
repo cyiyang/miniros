@@ -21,6 +21,9 @@ def thread_CV():
     rospy.spin()
 
 class SimpleStateMachine(StateMachine):
+    def __init__(self,actuator):
+        self.actuator=actuator
+        super(SimpleStateMachine,self).__init__()
     Start = State("Start",initial=True)
     Dispense_ABC = State("Dispense_ABC")
     HandWritten = State("HandWritten")
@@ -45,19 +48,20 @@ class SimpleStateMachine(StateMachine):
                               1                  1              识别结束，请求成功，常规情况，继续配送
     '''
     def GotTarget(self):
-        if Master_Car.asksuccess_flag :
+        if self.actuator.asksuccess_flag :
             return True
         else:
             return False
     
     def ReAskMission(self):
-        if not (Master_Car.seefinished_flag and Master_Car.asksuccess_flag): 
+        if not (self.actuator.seefinished_flag_true or self.actuator.asksuccess_flag): 
+            rospy.sleep(1)
             return True
         else:
             return False
     
     def StartWander(self):
-        if Master_Car.seefinished_flag == True and Master_Car.asksuccess_flag == False :
+        if self.actuator.seefinished_flag_true == True and self.actuator.asksuccess_flag == False :
             rospy.logwarn("进入wandering状态")
             return True
         else:
@@ -70,9 +74,13 @@ class SimpleStateMachine(StateMachine):
         1.请求新任务
         2.允许识别器查看图片
         '''
-        Master_Car.actuator_ask_newtarget()
-        Master_Car.allow2see_flag=True
+        self.actuator.actuator_ask_newtarget()
+        self.actuator.allow2see_flag=True
+        self.actuator.seefinished_flag_true=self.actuator.seefinished_flag_temp
 
+    def on_exit_Start(self):
+        self.actuator.allow2see_flag=False
+        
     def on_enter_Dispense_ABC(self):
         '''
         需要完成的工作：
@@ -86,14 +94,14 @@ class SimpleStateMachine(StateMachine):
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "map"
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose = point_ABC_master[Master_Car.mission_response.drug_location]
-        if Master_Car.actuator_move(goal) == True:
-            newABC = Master_Car.responseToABC[Master_Car.mission_response.drug_location]
+        goal.target_pose.pose = point_ABC_master[self.actuator.mission_response.drug_location]
+        if self.actuator.actuator_move(goal) == True:
+            newABC = self.actuator.responseToABC[self.actuator.mission_response.drug_location]
             rospy.loginfo("到达配药区%c", newABC)
-            Master_Car.actuator_updateABC()
+            self.actuator.actuator_updateABC()
         else:
             rospy.logerr("配药失败")
-            Master_Car.move_base_client.cancel_goal()
+            self.actuator.move_base_client.cancel_goal()
     
     def on_enter_HandWritten(self):
         '''
@@ -110,29 +118,29 @@ class SimpleStateMachine(StateMachine):
         goal.target_pose.header.frame_id = "map"
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose = point_special_master[1]
-        if Master_Car.actuator_move(goal) == True:
+        if self.actuator.actuator_move(goal) == True:
             rospy.loginfo("到达手写数字点")
-            if(Master_Car.first_arrived_flag==False):#第一次到达标志位
+            if(self.actuator.first_arrived_flag==False):#第一次到达标志位
                 rospy.logwarn("Master已到达，Watcher可以离开")
-                Master_Car.first_arrived_flag=True
-                Master_Car.watcher_go_pub.publish(True)
+                self.actuator.first_arrived_flag=True
+                self.actuator.watcher_go_pub.publish(True)
         else:
             rospy.logerr("手写数字点失败")
-            Master_Car.move_base_client.cancel_goal()
+            self.actuator.move_base_client.cancel_goal()
     
     def on_enter_Pickup_1234(self):
         rospy.loginfo("前往取药区")
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "map"
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose = point_1234_master[Master_Car.mission_response.deliver_destination]
-        if Master_Car.actuator_move(goal) == True:
-            rospy.loginfo("到达取药区%d", Master_Car.mission_response.deliver_destination)
-            Master_Car.actuator_update1234()
+        goal.target_pose.pose = point_1234_master[self.actuator.mission_response.deliver_destination]
+        if self.actuator.actuator_move(goal) == True:
+            rospy.loginfo("到达取药区%d", self.actuator.mission_response.deliver_destination)
+            self.actuator.actuator_update1234()
              
         else:
             rospy.logerr("取药失败")
-            Master_Car.move_base_client.cancel_goal()  # 取消当前目标导航点
+            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
     
     def on_enter_Zero(self):
         rospy.loginfo("前往起点")
@@ -140,11 +148,11 @@ class SimpleStateMachine(StateMachine):
         goal.target_pose.header.frame_id = "map"
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose = point_special_master[0]
-        if Master_Car.actuator_move(goal) == True:
+        if self.actuator.actuator_move(goal) == True:
            rospy.loginfo("到达起点")
         else:
             rospy.logerr("前往起点失败")
-            Master_Car.move_base_client.cancel_goal()  # 取消当前目标导航点
+            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
     def on_enter_Wandering(self):
         rospy.loginfo("前往运动点（配药区）")
@@ -152,36 +160,35 @@ class SimpleStateMachine(StateMachine):
         goal.target_pose.header.frame_id = "map"
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose = point_special_master[2]
-        if Master_Car.actuator_move(goal) == True:
+        if self.actuator.actuator_move(goal) == True:
             rospy.loginfo("到达运动点（配药区）")
         else:
             rospy.logerr("前往1号运动点失败")
-            Master_Car.move_base_client.cancel_goal()  # 取消当前目标导航点
+            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
         rospy.loginfo("前往运动点（取药区）")
         goal2 = MoveBaseGoal()
         goal2.target_pose.header.frame_id = "map"
         goal2.target_pose.header.stamp = rospy.Time.now()
         goal2.target_pose.pose = point_special_master[3]
-        if Master_Car.actuator_move(goal2) == True:
+        if self.actuator.actuator_move(goal2) == True:
             rospy.loginfo("到达运动点（配药区）")
         else:
             rospy.logerr("前往2号运动点失败")
-            Master_Car.move_base_client.cancel_goal()  # 取消当前目标导航点
+            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
 class CarActuator(object):
     def __init__(self):
         rospy.init_node("act_master")
         self.watcher_go_pub = rospy.Publisher("watcher_go",Bool,queue_size=10)
         # self.master_status_pub = rospy.Publisher("master_status",Int16,queue_size=10)
-        self.machine = SimpleStateMachine()
 
         self.first_arrived_flag = False     #第一次到达标志位
         self.asksuccess_flag = False        #请求成功标志位
-        self.seefinished_flag = False       # 识别结束标志位
-        self.allow2see_flag = True          #允许识别标志位
-        self.wander_flag = False            #允许进入Wander标志位
-
+        self.seefinished_flag_true = False  #识别结束标志位
+        self.seefinished_flag_temp = False  #识别结束标志位影子寄存
+        self.allow2see_flag = True          #允许识别标志位,物理上的
+        
         rospy.on_shutdown(self.actuator_shutdown)
 
         self.permission_server = rospy.Service(
@@ -212,10 +219,6 @@ class CarActuator(object):
         add_thread.start()
         rospy.loginfo("deal CV thread OK")
 
-        while not rospy.is_shutdown():
-            self.machine.Go()
-          
-
     # 程序退出执行
     def actuator_shutdown(self):
         rospy.logerr("Stop the robot")
@@ -242,7 +245,6 @@ class CarActuator(object):
         else:  # 请求失败
             self.asksuccess_flag = False
 
-       
     # 向服务器上报已取药
     def actuator_updateABC(self):
         playsound("/home/EPRobot/Music/dispense.mp3")
@@ -263,8 +265,9 @@ class CarActuator(object):
     def actuator_dealCV_ask(self, req):
         if req.request == 0:  # "想看请求"
             rospy.loginfo("接受:[想看]")
-            self.seefinished_flag = False       #未看完=想看=接受到想看请求=有新一轮
+            self.seefinished_flag_temp = False       #未看完=想看=接受到想看请求=有新一轮
             if self.allow2see_flag:             #已经到达识别区,允许识别
+                self.allow2see_flag=False
                 resp = PermissionMsgResponse(1)  # 可以看
                 rospy.loginfo("回复:[可以]")
             else:
@@ -274,7 +277,8 @@ class CarActuator(object):
         else:  # "看完了"
             rospy.loginfo("接受:[看完]")
             resp = PermissionMsgResponse(0)
-            self.seefinished_flag = True  #识别结束=不需要识别
+
+            self.seefinished_flag_temp = True  #识别结束=不需要识别
 
         return resp
 
@@ -297,6 +301,9 @@ class CarActuator(object):
 if __name__ == "__main__":
     try:
         Master_Car=CarActuator()
+        machine=SimpleStateMachine(Master_Car)
+        while not rospy.is_shutdown():
+            machine.Go()
     except rospy.ROSInterruptException:
         rospy.logerr("程序意外退出")
         pass
