@@ -8,7 +8,7 @@ import rospy
 from actionlib_msgs.msg import GoalStatus
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from playsound import playsound
-from std_msgs.msg import Bool,Int16
+from std_msgs.msg import Bool
 from statemachine import State, StateMachine
 from actuator.srv import (
     DestinationMsg,
@@ -181,7 +181,6 @@ class CarActuator(object):
     def __init__(self):
         rospy.init_node("act_master")
         self.watcher_go_pub = rospy.Publisher("watcher_go",Bool,queue_size=10)
-        # self.master_status_pub = rospy.Publisher("master_status",Int16,queue_size=10)
 
         self.first_arrived_flag = False     #第一次到达标志位
         self.asksuccess_flag = False        #请求成功标志位
@@ -277,7 +276,6 @@ class CarActuator(object):
         else:  # "看完了"
             rospy.loginfo("接受:[看完]")
             resp = PermissionMsgResponse(0)
-
             self.seefinished_flag_temp = True  #识别结束=不需要识别
 
         return resp
