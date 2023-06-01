@@ -22,7 +22,7 @@ class CarActuator(object):
         rospy.init_node("act_slave")
         rospy.on_shutdown(self.actuator_shutdown)
 
-        self.masterlocation_sub=rospy.Subscriber("masterlocation",Int16,self.leavemaster,queue_size=10)
+        self.master_status_sub=rospy.Subscriber("/master_status",Int16,self.leavemaster,queue_size=10)
         rospy.loginfo("从机订阅者已上线")
         # 订阅move_base服务器的消息
         self.move_base_client_slave = actionlib.SimpleActionClient(
@@ -32,7 +32,7 @@ class CarActuator(object):
         self.move_base_client_slave.wait_for_server()
         rospy.loginfo("连上move_base 服务器了")
 
-        self.mission_client = rospy.ServiceProxy("mission", DestinationMsg)
+        self.mission_client = rospy.ServiceProxy("/mission", DestinationMsg)
         rospy.loginfo("调度器客户端正常启动了")
 
         self.mission_client.wait_for_service()
@@ -45,7 +45,7 @@ class CarActuator(object):
         self.mission_request = DestinationMsgRequest()  # 定义请求
         self.mission_request.car_no = int(sys.argv[1])  # 设定编号
 
-        self.masterstatus = 1 #主机状态机状态
+        self.master_status = 1 #主机状态机状态
         self.updateOnce_flag=0 #0是未上传，1为已上传
 
         self.responseToABC = {-1:'E',0: 'A', 1: 'B', 2: 'C'}
