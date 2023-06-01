@@ -19,15 +19,19 @@ from tf.transformations import quaternion_from_euler
 # DEBUGGING = True 状态下，副车不会等待主车
 DEBUGGING = False
 
+
 def thread_Master():
     rospy.spin()
+
 
 class SendCar2Somewhere(object):
     def __init__(self):
         rospy.init_node("single_ticket")
         rospy.on_shutdown(self.SendCar2Somewhere_shutdown)
-        self.watcher_go_sub = rospy.Subscriber("watcher_go",Bool,self.deal_watcher_go,queue_size=10)
-        self.watcher_go_flag =False
+        self.watcher_go_sub = rospy.Subscriber(
+            "/watcher_go", Bool, self.deal_watcher_go, queue_size=10
+        )
+        self.watcher_go_flag = False
 
         self.move_base_client = actionlib.SimpleActionClient(
             "move_base", MoveBaseAction
@@ -59,7 +63,7 @@ class SendCar2Somewhere(object):
 
         rospy.loginfo("初始化结束")
 
-        while not DEBUGGING or self.watcher_go_flag:
+        while not (DEBUGGING or self.watcher_go_flag):
             rospy.loginfo("Watcher未接收到允许离开的消息")
             rospy.sleep(1)
 
@@ -67,7 +71,7 @@ class SendCar2Somewhere(object):
             if self.status == 1:
                 rospy.loginfo("前往配药区")
                 goal = MoveBaseGoal()
-                goal.target_pose.header.frame_id = "map"
+                goal.target_pose.header.frame_id = "slave/map"
                 goal.target_pose.header.stamp = rospy.Time.now()
                 goal.target_pose.pose = point_special[0]
                 if self.SendCar2Somewhere_move(goal) == True:
@@ -84,7 +88,7 @@ class SendCar2Somewhere(object):
             elif self.status == 4:
                 rospy.loginfo("前往手写数字识别区")
                 goal = MoveBaseGoal()
-                goal.target_pose.header.frame_id = "map"
+                goal.target_pose.header.frame_id = "slave/map"
                 goal.target_pose.header.stamp = rospy.Time.now()
                 goal.target_pose.pose = point_special[1]
                 if self.SendCar2Somewhere_move(goal) == True:
@@ -100,22 +104,22 @@ class SendCar2Somewhere(object):
                 # rospy.loginfo("bridge可以启动")
                 rospy.sleep(2)
                 rospy.loginfo("开始清理")
-                os.system("rosnode kill /amcl")
-                os.system("rosnode kill /base_control")
-                os.system("rosnode kill /base_to_camera")
-                os.system("rosnode kill /base_to_gyro")
-                os.system("rosnode kill /base_to_laser")
-                os.system("rosnode kill /base_to_link")
-                os.system("rosnode kill /ekf_se")
-                os.system("rosnode kill /joint_state_publisher")
-                os.system("rosnode kill /laser_filter")
-                os.system("rosnode kill /ls01d")
-                os.system("rosnode kill /map_server")
-                os.system("rosnode kill /joint_state_publisher")
-                os.system("rosnode kill /laser_filter")
-                os.system("rosnode kill /move_base")
-                os.system("rosnode kill /robot_state_publisher")
-                os.system("rosnode kill /single_ticket")
+                os.system("rosnode kill amcl")
+                os.system("rosnode kill base_control")
+                os.system("rosnode kill base_to_camera")
+                os.system("rosnode kill base_to_gyro")
+                os.system("rosnode kill base_to_laser")
+                os.system("rosnode kill base_to_link")
+                os.system("rosnode kill ekf_se")
+                os.system("rosnode kill joint_state_publisher")
+                os.system("rosnode kill laser_filter")
+                os.system("rosnode kill ls01d")
+                os.system("rosnode kill map_server")
+                os.system("rosnode kill joint_state_publisher")
+                os.system("rosnode kill laser_filter")
+                os.system("rosnode kill move_base")
+                os.system("rosnode kill robot_state_publisher")
+                os.system("rosnode kill single_ticket")
                 rospy.loginfo("全部节点已经清理,开始亡语")
                 # 启动 Yolo
                 # path = os.path.expanduser(
@@ -151,10 +155,11 @@ class SendCar2Somewhere(object):
             else:
                 rospy.loginfo("没超时但失败")
                 return False
-            
-    def deal_watcher_go(self,msg):
-        if(msg.data):
-            self.watcher_go_flag=True
+
+    def deal_watcher_go(self, msg):
+        # rospy.loginfo(msg.data)
+        if msg.data:
+            self.watcher_go_flag = True
 
 
 if __name__ == "__main__":

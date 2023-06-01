@@ -16,6 +16,7 @@ from deliver_scheduler.srv import (
 )
 
 DEBUG = 0
+# WARNING: 网络环境变化时，多处IP需要修改，建议通过环境变量获取地址和端口等信息
 SLAVE_ADDR = "192.168.137.172"
 SLAVE_PORT = 12345
 SLAVE_READY_PORT = 11515
