@@ -10,9 +10,6 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from playsound import playsound
 from std_msgs.msg import Bool,Int16
 from statemachine import State, StateMachine
-from statemachine.exceptions import TransitionNotAllowed
-
-
 from actuator.srv import (
     DestinationMsg,
     DestinationMsgRequest,
@@ -20,10 +17,8 @@ from actuator.srv import (
     PermissionMsgResponse,
 )
 
-
 def thread_CV():
     rospy.spin()
-
 
 class SimpleStateMachine(StateMachine):
     Start = State("Start",initial=True)
@@ -33,8 +28,42 @@ class SimpleStateMachine(StateMachine):
     Zero = State("Zero")
     Wandering = State("Wandering")
     #Go是一个事件Event，这个Event是由几个转移Transitions组成
-    Go = (Start.to(Dispense_ABC,cond="GotTarget")|Start.to(Start,cond="ReAskMission")|Start.to(Wandering,cond="StartWander")|Dispense_ABC.to(HandWritten)|HandWritten.to(Pickup_1234)|Pickup_1234.to(Zero)|Zero.to(Start)|Wandering.to(Start))
+    Go = (Start.to(Dispense_ABC,cond="GotTarget")|
+          Start.to(Start,cond="ReAskMission")|
+          Start.to(Wandering,cond="StartWander")|
+          Dispense_ABC.to(HandWritten)|
+          HandWritten.to(Pickup_1234)|
+          Pickup_1234.to(Zero)|
+          Zero.to(Start)|
+          Wandering.to(Zero))
 
+    #以下是条件转移的条件
+    '''                seefinished_flag    asksuccess_flag      意义
+    True or False             0                  0              得到识别请求，请求失败，重新请求
+                              0                  1              得到识别请求，请求成功，出现小哥堆积情况，继续配送
+                              1                  0              识别结束，请求失败，本轮小哥处理完，进入wander
+                              1                  1              识别结束，请求成功，常规情况，继续配送
+    '''
+    def GotTarget(self):
+        if Master_Car.asksuccess_flag :
+            return True
+        else:
+            return False
+    
+    def ReAskMission(self):
+        if not (Master_Car.seefinished_flag and Master_Car.asksuccess_flag): 
+            return True
+        else:
+            return False
+    
+    def StartWander(self):
+        if Master_Car.seefinished_flag == True and Master_Car.asksuccess_flag == False :
+            rospy.logwarn("进入wandering状态")
+            return True
+        else:
+            return False
+
+        
     def on_enter_Start(self): 
         '''
         需要完成的工作：
@@ -117,29 +146,28 @@ class SimpleStateMachine(StateMachine):
             rospy.logerr("前往起点失败")
             Master_Car.move_base_client.cancel_goal()  # 取消当前目标导航点
 
-    #以下是条件转移的条件
-    def GotTarget(self):
-        if Master_Car.asksuccess_flag:
-            return True
+    def on_enter_Wandering(self):
+        rospy.loginfo("前往运动点（配药区）")
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose = point_special_master[2]
+        if Master_Car.actuator_move(goal) == True:
+            rospy.loginfo("到达运动点（配药区）")
         else:
-            return False
-    
-    def ReAskMission(self):
-        if not (Master_Car.seefinished_flag and Master_Car.asksuccess_flag): 
-            '''
-            seefinished_flag==False ->有新识别器需求的请求
-            asksuccess_flag==False->请求失败
-            '''
-            return True
+            rospy.logerr("前往1号运动点失败")
+            Master_Car.move_base_client.cancel_goal()  # 取消当前目标导航点
+
+        rospy.loginfo("前往运动点（取药区）")
+        goal2 = MoveBaseGoal()
+        goal2.target_pose.header.frame_id = "map"
+        goal2.target_pose.header.stamp = rospy.Time.now()
+        goal2.target_pose.pose = point_special_master[3]
+        if Master_Car.actuator_move(goal2) == True:
+            rospy.loginfo("到达运动点（配药区）")
         else:
-            return False
-    
-    def StartWander(self):
-        if Master_Car.wander_flag:
-            Master_Car.wander_flag = False 
-            return True
-        else:
-            return False
+            rospy.logerr("前往2号运动点失败")
+            Master_Car.move_base_client.cancel_goal()  # 取消当前目标导航点
 
 class CarActuator(object):
     def __init__(self):
@@ -214,11 +242,7 @@ class CarActuator(object):
         else:  # 请求失败
             self.asksuccess_flag = False
 
-        #如果请求失败同时已经看过了，那么就代表已经完成本轮
-        if self.asksuccess_flag == False and self.seefinished_flag == True:
-            self.wander_flag = True #允许进入wander状态 
-            rospy.logwarn("进入wandering状态")
-
+       
     # 向服务器上报已取药
     def actuator_updateABC(self):
         playsound("/home/EPRobot/Music/dispense.mp3")
@@ -255,11 +279,8 @@ class CarActuator(object):
         return resp
 
     def actuator_move(self, goal):
-        # 把目标位置发送给MoveBaseAction的服务器
         self.move_base_client.send_goal(goal)
-        # 设定1分钟的时间限制
         finished_within_time = self.move_base_client.wait_for_result(rospy.Duration(30))
-        # 如果30s没有成功，放弃
         if not finished_within_time:
             self.move_base_client.cancel_goal()
             rospy.logerr("move_base超时")

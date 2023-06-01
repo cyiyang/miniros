@@ -172,6 +172,7 @@ catkin_install_python(PROGRAMS
   scripts/mission_server.py
   scripts/permission_client.py
   scripts/Announcer.py
+  scripts/actuator_rebuild.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
