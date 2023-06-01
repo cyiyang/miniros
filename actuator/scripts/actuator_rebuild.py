@@ -8,7 +8,7 @@ import rospy
 from actionlib_msgs.msg import GoalStatus
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from playsound import playsound
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool,String
 from statemachine import State, StateMachine
 from actuator.srv import (
     DestinationMsg,
@@ -75,6 +75,10 @@ class SimpleStateMachine(StateMachine):
             return True
         else:
             return False
+        
+    def on_transition(self,state):
+        self.actuator.master_location_pub.publish(state.id)
+       
 
     def on_enter_Start(self):
         """
@@ -196,6 +200,7 @@ class CarActuator(object):
     def __init__(self):
         rospy.init_node("act_master")
         self.watcher_go_pub = rospy.Publisher("watcher_go", Bool, queue_size=10)
+        self.master_location_pub = rospy.Publisher("master_location",String,queue_size=10)
 
         self.first_arrived_flag = False  # 第一次到达标志位
         self.asksuccess_flag = False  # 请求成功标志位
@@ -224,7 +229,6 @@ class CarActuator(object):
         self.mission_client.wait_for_service()
         rospy.loginfo("连上调度器服务器了")
 
-        self.status = 1  # 状态机状态
         self.mission_request = DestinationMsgRequest()  # 定义请求
 
         self.responseToABC = {-1: "E", 0: "A", 1: "B", 2: "C"}
@@ -255,7 +259,6 @@ class CarActuator(object):
             and self.mission_response.deliver_destination != -1
         ):  # 不是负-1代表请求成功
             self.asksuccess_flag = True  # 请求成功
-            self.wander_flag = False  # 不允许进入Wander状态
         else:  # 请求失败
             self.asksuccess_flag = False
 
@@ -313,6 +316,7 @@ if __name__ == "__main__":
         machine = SimpleStateMachine(Master_Car)
         while not rospy.is_shutdown():
             machine.Go()
+          
     except rospy.ROSInterruptException:
         rospy.logerr("程序意外退出")
         pass
