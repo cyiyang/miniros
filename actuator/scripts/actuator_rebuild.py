@@ -8,7 +8,6 @@ import rospy
 from actionlib_msgs.msg import GoalStatus
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from playsound import playsound
-from std_msgs.msg import Bool,String
 from statemachine import State, StateMachine
 from actuator.srv import (
     DestinationMsg,
@@ -16,7 +15,7 @@ from actuator.srv import (
     PermissionMsg,
     PermissionMsgResponse,
 )
-
+from actuator.msg import EveryoneStatus
 
 def thread_CV():
     rospy.spin()
@@ -32,17 +31,19 @@ class SimpleStateMachine(StateMachine):
     HandWritten = State("HandWritten")
     Pickup_1234 = State("Pickup_1234")
     Zero = State("Zero")
-    Wandering = State("Wandering")
+    Wander1 = State("Wander1")
+    Wander2 = State("Wander2")
     # Go是一个事件Event，这个Event是由几个转移Transitions组成
     Go = (
         Start.to(Dispense_ABC, cond="GotTarget")
         | Start.to(Start, cond="ReAskMission")
-        | Start.to(Wandering, cond="StartWander")
+        | Start.to(Wander1, cond="StartWander")
         | Dispense_ABC.to(HandWritten)
         | HandWritten.to(Pickup_1234)
         | Pickup_1234.to(Zero)
         | Zero.to(Start)
-        | Wandering.to(Zero)
+        | Wander1.to(Wander2)
+        | Wander2.to(Zero)
     )
 
     # 以下是条件转移的条件
@@ -71,14 +72,20 @@ class SimpleStateMachine(StateMachine):
             self.actuator.seefinished_flag_true == True
             and self.actuator.asksuccess_flag == False
         ):
-            rospy.logwarn("进入wandering状态")
+            rospy.logwarn("进入wander状态")
             return True
         else:
             return False
         
     def on_transition(self,state):
-        self.actuator.master_location_pub.publish(state.id)
-       
+        Master_status = EveryoneStatus()
+        Master_status.name = 'Master'
+        Master_status.status = state.id
+        self.actuator.location_pub.publish(Master_status)
+        '''
+        得到转移前的状态,比如从配药点到手写点,在enter handwriting(前往手写数字的路上)，主车公布的状态为配药
+        从车如果此时想从起始点出发到配药点，在转移时会发现主车状态依然为配药，所以不会转移
+        '''
 
     def on_enter_Start(self):
         """
@@ -136,10 +143,6 @@ class SimpleStateMachine(StateMachine):
         goal.target_pose.pose = point_special_master[1]
         if self.actuator.actuator_move(goal) == True:
             rospy.loginfo("到达手写数字点")
-            if self.actuator.first_arrived_flag == False:  # 第一次到达标志位
-                rospy.logwarn("Master已到达，Watcher可以离开")
-                self.actuator.first_arrived_flag = True
-                self.actuator.watcher_go_pub.publish(True)
         else:
             rospy.logerr("手写数字点失败")
             self.actuator.move_base_client.cancel_goal()
@@ -172,7 +175,7 @@ class SimpleStateMachine(StateMachine):
             rospy.logerr("前往起点失败")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
-    def on_enter_Wandering(self):
+    def on_enter_Wander1(self):
         rospy.loginfo("前往运动点（配药区）")
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "map"
@@ -184,13 +187,15 @@ class SimpleStateMachine(StateMachine):
             rospy.logerr("前往1号运动点失败")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
+    def on_enter_Wander2(self):  
         rospy.loginfo("前往运动点（取药区）")
-        goal2 = MoveBaseGoal()
-        goal2.target_pose.header.frame_id = "map"
-        goal2.target_pose.header.stamp = rospy.Time.now()
-        goal2.target_pose.pose = point_special_master[3]
-        if self.actuator.actuator_move(goal2) == True:
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose = point_special_master[3]
+        if self.actuator.actuator_move(goal) == True:
             rospy.loginfo("到达运动点（配药区）")
+
         else:
             rospy.logerr("前往2号运动点失败")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
@@ -199,10 +204,8 @@ class SimpleStateMachine(StateMachine):
 class CarActuator(object):
     def __init__(self):
         rospy.init_node("act_master")
-        self.watcher_go_pub = rospy.Publisher("watcher_go", Bool, queue_size=10)
-        self.master_location_pub = rospy.Publisher("master_location",String,queue_size=10)
+        self.location_pub = rospy.Publisher("location",EveryoneStatus,queue_size=10)
 
-        self.first_arrived_flag = False  # 第一次到达标志位
         self.asksuccess_flag = False  # 请求成功标志位
         self.seefinished_flag_true = False  # 识别结束标志位
         self.seefinished_flag_temp = False  # 识别结束标志位影子寄存

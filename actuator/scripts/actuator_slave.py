@@ -14,6 +14,7 @@ from actuator.srv import (
     DestinationMsg,
     DestinationMsgRequest,
 )
+from actuator.msg import EveryoneStatus
 
 def thread_Master():
     rospy.spin()
@@ -28,42 +29,164 @@ class SimpleStateMachine(StateMachine):
     HandWritten = State("HandWritten")
     Pickup_1234 = State("Pickup_1234")
     Zero = State("Zero")
-    Wandering = State("Wandering")
+    Wander1 = State("Wander1")
+    Wander2 = State("Wander2")
     # Go是一个事件Event，这个Event是由几个转移Transitions组成
     Go = (
         Start.to(Dispense_ABC, cond="GotTarget")
         | Start.to(Start, cond="ReAskMission")
-        | Start.to(Wandering, cond="StartWander")
+        | Start.to(Wander1, cond="StartWander")
         | Dispense_ABC.to(HandWritten)
         | HandWritten.to(Pickup_1234)
         | Pickup_1234.to(Zero)
         | Zero.to(Start)
-        | Wandering.to(Zero)
+        | Wander1.to(Wander2)
+        | Wander2.to(Zero)
     )
 
-    def before_transition(self, event, state):
-        #判断主车状态，条件满足即可转移，否则卡在这里
-        pass
+    def on_transition(self,state):
+        rospy.logwarn("Slave想要转移,当前状态为:%s",state.id)
+        if state.id == 'Start': #在Start时进入转移，代表条件已经允许，可以直接pass
+            pass
+        else:
+            while self.actuator.master_location == state.id :
+                rospy.loginfo("主从状态一致，请等待")
 
+         
     def GotTarget(self):
-        pass
+        if(self.actuator.master_location == 'Dispense_ABC' and self.actuator.asksuccess_flag == True):
+            return True
+        else:
+            return False
 
     def ReAskMission(self):
-        pass
+        if self.actuator.master_location == 'Start': #主车在Start，从车只能reask
+            return True
+        else:
+            return False
 
     def StartWander(self):
-        pass
+        if self.actuator.master_location == 'Wander1' or self.actuator.master_location == 'Wander2':
+            return True
+        else:
+            return False
 
+    
+    def on_enter_Start(self):
+        self.actuator.actuator_ask_newtarget()
 
+    def on_enter_Dispense_ABC(self):
+        """
+        需要完成的工作：
+        1.向Move_Base发布关于ABC的点
+        2.判断是否到达
+        3.如果到达请上报服务器
+        4.如果没有到达，请阻塞在这里
+        5.如果失败，请取消目标点
+        """
+        rospy.loginfo("前往配药区")
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose = point_ABC_slave[
+            self.actuator.mission_response.drug_location
+        ]
+        if self.actuator.actuator_move(goal) == True:
+            newABC = self.actuator.responseToABC[
+                self.actuator.mission_response.drug_location
+            ]
+            rospy.loginfo("到达配药区%c", newABC)
+            self.actuator.actuator_updateABC()
+        else:
+            rospy.logerr("配药失败")
+            self.actuator.move_base_client.cancel_goal()
 
+    def on_enter_HandWritten(self):
+        """
+        需要完成的工作：
+        1.向Move_Base发布关于手写数字的点
+        2.判断是否到达
+        3.如果到达请上报服务器
+        4.如果没有到达，请阻塞在这里
+        5.如果失败，请取消目标点
+        6.对第一次到达进行处理
+        """
+        rospy.loginfo("前往手写数字识别区")
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose = point_special_slave[1]
+        if self.actuator.actuator_move(goal) == True:
+            rospy.loginfo("到达手写数字点")
+            if self.actuator.first_arrived_flag == False:  # 第一次到达标志位
+                rospy.logwarn("Master已到达，Watcher可以离开")
+                self.actuator.first_arrived_flag = True
+                self.actuator.watcher_go_pub.publish(True)
+        else:
+            rospy.logerr("手写数字点失败")
+            self.actuator.move_base_client.cancel_goal()
+
+    def on_enter_Pickup_1234(self):
+        rospy.loginfo("前往取药区")
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose = point_1234_slave[
+            self.actuator.mission_response.deliver_destination
+        ]
+        if self.actuator.actuator_move(goal) == True:
+            rospy.loginfo("到达取药区%d", self.actuator.mission_response.deliver_destination)
+            self.actuator.actuator_update1234()
+
+        else:
+            rospy.logerr("取药失败")
+            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
+
+    def on_enter_Zero(self):
+        rospy.loginfo("前往起点")
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose = point_special_slave[0]
+        if self.actuator.actuator_move(goal) == True:
+            rospy.loginfo("到达起点")
+        else:
+            rospy.logerr("前往起点失败")
+            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
+
+    def on_enter_Wander1(self):
+        rospy.loginfo("前往运动点（配药区）")
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose = point_special_slave[2]
+        if self.actuator.actuator_move(goal) == True:
+            rospy.loginfo("到达运动点（配药区）")
+        else:
+            rospy.logerr("前往1号运动点失败")
+            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
+
+    def on_enter_Wander2(self):  
+        rospy.loginfo("前往运动点（取药区）")
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose = point_special_slave[3]
+        if self.actuator.actuator_move(goal) == True:
+            rospy.loginfo("到达运动点（配药区）")
+
+        else:
+            rospy.logerr("前往2号运动点失败")
+            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
 class CarActuator(object):
     def __init__(self):
         rospy.init_node("act_slave")
-        self.master_location_sub = rospy.Subscriber("master_location",String,self.actuator_dealmaster,queue_size=10)
-
+        self.location_sub = rospy.Subscriber("location",EveryoneStatus,self.actuator_deallocation,queue_size=10)
+        self.location_pub = rospy.Publisher("location",EveryoneStatus,queue_size=10)
         self.first_arrived_flag = False  # 第一次到达标志位
         self.asksuccess_flag = False  # 请求成功标志位
+        self.master_location = 'Start' #主车一开始默认为Start
 
         rospy.on_shutdown(self.actuator_shutdown)
 
@@ -142,7 +265,9 @@ class CarActuator(object):
                 return False
     
     def actuator_dealMaster(self,msg):
-        rospy.loginfo("接收到Master的状态为:%s",msg.data)
+        rospy.loginfo("接收状态为:姓名:%s,状态:%s",msg.name,msg.status)
+        if msg.name == 'Master':
+            self.master_location=msg.status
         pass
 
 
