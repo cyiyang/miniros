@@ -71,7 +71,7 @@ class SendCar2Somewhere(object):
             if self.status == 1:
                 rospy.loginfo("前往配药区")
                 goal = MoveBaseGoal()
-                goal.target_pose.header.frame_id = "slave/map"
+                goal.target_pose.header.frame_id = "watcher/map"
                 goal.target_pose.header.stamp = rospy.Time.now()
                 goal.target_pose.pose = point_special[0]
                 if self.SendCar2Somewhere_move(goal) == True:
@@ -88,7 +88,7 @@ class SendCar2Somewhere(object):
             elif self.status == 4:
                 rospy.loginfo("前往手写数字识别区")
                 goal = MoveBaseGoal()
-                goal.target_pose.header.frame_id = "slave/map"
+                goal.target_pose.header.frame_id = "watcher/map"
                 goal.target_pose.header.stamp = rospy.Time.now()
                 goal.target_pose.pose = point_special[1]
                 if self.SendCar2Somewhere_move(goal) == True:
