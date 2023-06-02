@@ -1,0 +1,15 @@
+shutdown_costmaps: false #当move_base 在不活动状态时，是否关掉costmap
+
+controller_frequency: 5.0 #向底盘发送移动话题cmd_vel的频率
+controller_patience: 15.0 #在空间清理造作执行前，控制器花多长时间等有效控制下发
+
+planner_frequency: 1.0 #全局规划执行的频率
+planner_patience: 5.0  #留给规划器多长时间来找出一条有效规划
+
+conservative_reset_dist: 0.1
+
+oscillation_timeout: 10.0 #执行修复机制前，允许震荡的时长
+oscillation_distance: 0.2 #来回运动在多大距离以上不会认为是震荡
+
+clearing_rotation_allowed: false 
+

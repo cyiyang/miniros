@@ -1,6 +1,6 @@
 local_costmap:
-  global_frame: watcher/odom #在局部代价地图中的全局坐标系，一般需要设置为odom_frame，原为map，修改为odom
-  robot_base_frame: watcher/base_footprint # 机器人本体的基坐标系
+  global_frame: slave/odom #在局部代价地图中的全局坐标系，一般需要设置为odom_frame，原为map，修改为odom
+  robot_base_frame: slave/base_footprint # 机器人本体的基坐标系
   update_frequency: 5.0 #局部代价地图更新频率
   publish_frequency: 5.0 #发布频率
   # 以上不用修改
