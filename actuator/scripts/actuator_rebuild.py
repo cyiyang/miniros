@@ -204,7 +204,7 @@ class SimpleStateMachine(StateMachine):
 class CarActuator(object):
     def __init__(self):
         rospy.init_node("act_master")
-        self.location_pub = rospy.Publisher("location",EveryoneStatus,queue_size=10)
+        self.location_pub = rospy.Publisher("/location",EveryoneStatus,queue_size=10)
 
         self.asksuccess_flag = False  # 请求成功标志位
         self.seefinished_flag_true = False  # 识别结束标志位

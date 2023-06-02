@@ -45,7 +45,11 @@ class SimpleStateMachine(StateMachine):
     )
 
     def on_transition(self,state):
-        rospy.logwarn("Slave想要转移,当前状态为:%s",state.id)
+        Slave_status = EveryoneStatus()
+        Slave_status.name = 'Slave'
+        Slave_status.status = state.id
+        self.actuator.location_pub.publish(Slave_status)
+        rospy.loginfo("从车想要转移,状态为:%s",state.id)
         if state.id == 'Start': #在Start时进入转移，代表条件已经允许，可以直接pass
             pass
         else:
@@ -86,7 +90,7 @@ class SimpleStateMachine(StateMachine):
         """
         rospy.loginfo("前往配药区")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose = point_ABC_slave[
             self.actuator.mission_response.drug_location
@@ -113,7 +117,7 @@ class SimpleStateMachine(StateMachine):
         """
         rospy.loginfo("前往手写数字识别区")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose = point_special_slave[1]
         if self.actuator.actuator_move(goal) == True:
@@ -129,7 +133,7 @@ class SimpleStateMachine(StateMachine):
     def on_enter_Pickup_1234(self):
         rospy.loginfo("前往取药区")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose = point_1234_slave[
             self.actuator.mission_response.deliver_destination
@@ -145,7 +149,7 @@ class SimpleStateMachine(StateMachine):
     def on_enter_Zero(self):
         rospy.loginfo("前往起点")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose = point_special_slave[0]
         if self.actuator.actuator_move(goal) == True:
@@ -157,7 +161,7 @@ class SimpleStateMachine(StateMachine):
     def on_enter_Wander1(self):
         rospy.loginfo("前往运动点（配药区）")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose = point_special_slave[2]
         if self.actuator.actuator_move(goal) == True:
@@ -169,7 +173,7 @@ class SimpleStateMachine(StateMachine):
     def on_enter_Wander2(self):  
         rospy.loginfo("前往运动点（取药区）")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose = point_special_slave[3]
         if self.actuator.actuator_move(goal) == True:
@@ -182,8 +186,8 @@ class SimpleStateMachine(StateMachine):
 class CarActuator(object):
     def __init__(self):
         rospy.init_node("act_slave")
-        self.location_sub = rospy.Subscriber("location",EveryoneStatus,self.actuator_deallocation,queue_size=10)
-        self.location_pub = rospy.Publisher("location",EveryoneStatus,queue_size=10)
+        self.location_sub = rospy.Subscriber("/location",EveryoneStatus,self.actuator_deallocation,queue_size=10)
+        self.location_pub = rospy.Publisher("/location",EveryoneStatus,queue_size=10)
         self.first_arrived_flag = False  # 第一次到达标志位
         self.asksuccess_flag = False  # 请求成功标志位
         self.master_location = 'Start' #主车一开始默认为Start
@@ -264,7 +268,7 @@ class CarActuator(object):
                 rospy.logerr("没超时但失败")
                 return False
     
-    def actuator_dealMaster(self,msg):
+    def actuator_deallocation(self,msg):
         rospy.loginfo("接收状态为:姓名:%s,状态:%s",msg.name,msg.status)
         if msg.name == 'Master':
             self.master_location=msg.status
