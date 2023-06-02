@@ -33,16 +33,15 @@ else
     echo "[Watcher]无法连接到小车，与小车的同步不会进行"
 fi
 
-# 同步到副车
-# ping -c 1 slave > /dev/null
+# 同步到 slave
+ping -c 1 slave > /dev/null
 
-# if [ $? -eq 0 ]; then
-#     rsync -av --delete /home/$(whoami)/drug-deliverer/watcher_basic/ slave@slave:/home/slave/robot_ws/src/watcher_basic/
-#     rsync -av --delete /home/$(whoami)/drug-deliverer/param/watcher_param/ slave@slave:/home/slave/robot_ws/src/robot_navigation/param/
-#     rsync -av --delete /home/$(whoami)/drug-deliverer/send_goals/ slave@slave:/home/slave/robot_ws/src/send_goals/
-#     rsync -av --delete /home/$(whoami)/drug-deliverer/digit_recognizer/ slave@slave:/home/slave/digit_recognizer/
-#     echo "[Watcher]成功将本地drug-deliverer仓库的修改同步到小车的工作空间"
-# else
-#     echo "[Watcher]无法连接到小车，与小车的同步不会进行"
-# fi
+if [ $? -eq 0 ]; then
+    rsync -av --delete /home/$(whoami)/drug-deliverer/param/slave_param/ slave@slave:/home/slave/robot_ws/src/robot_navigation/param/
+    echo "[Slave]成功将本地drug-deliverer仓库的修改同步到小车的工作空间"
+else
+    echo "[Slave]无法连接到小车，与小车的同步不会进行"
+fi
+
+# 打印同步时间
 date
