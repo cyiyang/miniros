@@ -77,14 +77,14 @@ class SimpleStateMachine(StateMachine):
         else:
             return False
         
-    def on_transition(self,state):
+    def after_transition(self,state):
         Master_status = EveryoneStatus()
         Master_status.name = 'Master'
         Master_status.status = state.id
         self.actuator.location_pub.publish(Master_status)
         '''
-        得到转移前的状态,比如从配药点到手写点,在enter handwriting(前往手写数字的路上)，主车公布的状态为配药
-        从车如果此时想从起始点出发到配药点，在转移时会发现主车状态依然为配药，所以不会转移
+        得到转移后的状态,比如从配药点到手写点,已经到达手写点，公布状态手写，并准备离开，主车公布的状态为手写
+        从车如果此时想从配药点到手写点，在转移时会发现主车状态依然为手写，所以不会转移
         '''
 
     def on_enter_Start(self):
@@ -125,7 +125,7 @@ class SimpleStateMachine(StateMachine):
         else:
             rospy.logerr("配药失败")
             self.actuator.move_base_client.cancel_goal()
-
+#所有都有可能要改成exit，或者调整广播
     def on_enter_HandWritten(self):
         """
         需要完成的工作：

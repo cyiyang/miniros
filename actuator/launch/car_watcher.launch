@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="actuator" type="actuator_watcher.py" name="act_watcher" output="screen" />
+</launch>

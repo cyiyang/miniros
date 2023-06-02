@@ -31,7 +31,7 @@ def Death_Rattle():
     os.system("rosnode kill laser_filter")
     os.system("rosnode kill move_base")
     os.system("rosnode kill robot_state_publisher")
-    os.system("rosnode kill single_ticket")
+    os.system("rosnode kill act_watcher")
     rospy.loginfo("全部节点已经清理,开始亡语")
     # 启动 Yolo
     # path = os.path.expanduser(
@@ -52,58 +52,56 @@ class SimpleStateMachine(StateMachine):
     Harbour  =  State("Harbour")
     # Go是一个事件Event，这个Event是由几个转移Transitions组成
     Single_Ticket = (
-        Start.to(Temporary, cond="AllowedGo")|
-        Temporary.to(Harbour)
+        Start.to(Temporary, cond="AllowedGo")
+        |Temporary.to(Harbour)
+        |Start.to(Start,cond="Wait")
     )
 
+    def Wait(self):
+        rospy.loginfo("Master尚未到达,请等待")
+        rospy.sleep(1)
+        return True
+
     def AllowedGo(self):
-        if(self.actuator.slave_location == 'Dispense_ABC'):
+        if(self.actuator.master_location == 'Dispense_ABC'):
             return True
         else:
             return False
-        
-def on_transition(self,state):
-    rospy.loginfo("Watcher想要转移,状态为:%s",state.id)
-    if state.id == 'Start': #在Start时进入转移，代表条件已经允许，可以直接pass
-        pass
-    else:
-        while self.actuator.slave_location == state.id :
-            rospy.loginfo("主从状态一致，请等待")
+    
+    def on_enter_Temporary(self):
+        rospy.loginfo("前往临时停靠点")
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "watcher/map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose = point_special_watcher[0]
+        if self.actuator.SendCar2Somewhere_move(goal) == True:
+            rospy.loginfo("到达临时停靠点")
+        else:
+            rospy.logerr("临时停靠点失败")
+            self.actuator.move_base_client.cancel_goal()
 
-
-def on_enter_Temporary(self):
-    rospy.loginfo("前往临时停靠点")
-    goal = MoveBaseGoal()
-    goal.target_pose.header.frame_id = "watcher/map"
-    goal.target_pose.header.stamp = rospy.Time.now()
-    goal.target_pose.pose = point_special_watcher[0]
-    if self.actuator.actuator_move(goal) == True:
-        rospy.loginfo("到达临时停靠点")
-    else:
-        rospy.logerr("配药失败")
-        self.actuator.move_base_client.cancel_goal()
-def on_enter_Harbour(self):
-    rospy.loginfo("前往识别区")
-    goal = MoveBaseGoal()
-    goal.target_pose.header.frame_id = "watcher/map"
-    goal.target_pose.header.stamp = rospy.Time.now()
-    goal.target_pose.pose = point_special_watcher[1]
-    if self.actuator.actuator_move(goal) == True:
-        rospy.loginfo("到达识别区")
-        rospy.sleep(2)
-        Death_Rattle()
-    else:
-        rospy.logerr("配药失败")
-        self.actuator.move_base_client.cancel_goal()
+    def on_enter_Harbour(self):
+        rospy.loginfo("前往识别区")
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "watcher/map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose = point_special_watcher[1]
+        if self.actuator.SendCar2Somewhere_move(goal) == True:
+            rospy.loginfo("到达识别区")
+            rospy.sleep(2)
+            Death_Rattle()
+        else:
+            rospy.logerr("识别区失败")
+            self.actuator.move_base_client.cancel_goal()
 
 
 class SendCar2Somewhere(object):
     def __init__(self):
-        rospy.init_node("single_ticket")
+        rospy.init_node("act_watcher")
         rospy.on_shutdown(self.SendCar2Somewhere_shutdown)
         self.location_sub = rospy.Subscriber("/location",EveryoneStatus,self.SendCar2Somewhere_deallocation,queue_size=10)
 
-        self.slave_location = 'Start' #从车一开始默认为Start
+        self.master_location = 'Start' #从车一开始默认为Start
 
         self.move_base_client = actionlib.SimpleActionClient(
             "move_base", MoveBaseAction
@@ -116,6 +114,9 @@ class SendCar2Somewhere(object):
         add_thread.start()
         rospy.loginfo("deal Master thread OK")
         
+    def SendCar2Somewhere_shutdown(self):
+        rospy.logerr("Stop the robot")
+        self.move_base_client.cancel_goal()  # 取消当前目标导航点
 
     def SendCar2Somewhere_move(self, goal):
         self.move_base_client.send_goal(goal)
@@ -133,10 +134,10 @@ class SendCar2Somewhere(object):
                 return False
     
     def SendCar2Somewhere_deallocation(self,msg):
-        rospy.loginfo("接收状态为:姓名:%s,状态:%s",msg.name,msg.status)
-        if msg.name == 'Slave':
-            self.slave_location=msg.status
-        pass
+        rospy.loginfo("Get:%s,%s",msg.name,msg.status)
+        if msg.name == 'Master':
+            self.master_location=msg.status
+
 
 
 
