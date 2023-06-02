@@ -1,6 +1,6 @@
 global_costmap:
-  global_frame: watcher/map #全局代价地图需要在哪个坐标系下运行
-  robot_base_frame: watcher/base_footprint #在全局代价地图中机器人本体的基坐标系。
+  global_frame: slave/map #全局代价地图需要在哪个坐标系下运行
+  robot_base_frame: slave/base_footprint #在全局代价地图中机器人本体的基坐标系。
   update_frequency: 5.0 #在全局代价地图中机器人本体的基坐标系。
   publish_frequency: 5.0 #全局代价地图的发布频率，只用于Rviz可视化，这个参数没必要太大
   # static_map: true  #配置是否使用map_server提供的地图来初始化，因为全局地图都是静态的，一般都设置为true

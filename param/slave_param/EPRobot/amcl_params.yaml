@@ -1,8 +1,8 @@
 use_map_topic: true
 
-odom_frame_id: "watcher/odom"
-base_frame_id: "watcher/base_footprint"
-global_frame_id: "watcher/map"
+odom_frame_id: "slave/odom"
+base_frame_id: "slave/base_footprint"
+global_frame_id: "slave/map"
 
 ## Publish scans from best pose at a max of 10 Hz
 odom_model_type: "diff"
