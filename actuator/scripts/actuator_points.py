@@ -63,3 +63,11 @@ point_special_slave = [
     Pose(Point(0.885, 2.54, 0), quaternions[10]),  # 运动1点
     Pose(Point(-1.44, 2.035, 0), quaternions[11]),
 ]  # 运动2点
+
+
+point_special_watcher = [
+    Pose(Point(1.4, 2.3, 0), quaternions[10]),
+    Pose(Point(-0.75, 3.92, 0), quaternions[9])
+]  # 运动2点
+
+
