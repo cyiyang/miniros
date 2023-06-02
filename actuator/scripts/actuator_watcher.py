@@ -138,9 +138,6 @@ class SendCar2Somewhere(object):
         if msg.name == 'Master':
             self.master_location=msg.status
 
-
-
-
 if __name__ == "__main__":
     try:
         Watcher_Car = SendCar2Somewhere()
