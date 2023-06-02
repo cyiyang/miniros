@@ -165,13 +165,12 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/actuator_master.py
-  scripts/actuator_test.py
+  scripts/actuator_rebuild.py
+  scripts/actuator_points.py
   scripts/actuator_slave.py
+  scripts/actuator_watcher.py
   scripts/mission_server.py
   scripts/permission_client.py
-  scripts/Announcer.py
-  scripts/actuator_rebuild.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
