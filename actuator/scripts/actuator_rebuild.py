@@ -35,8 +35,8 @@ class SimpleStateMachine(StateMachine):
     Wander2 = State("Wander2")
     # Go是一个事件Event，这个Event是由几个转移Transitions组成
     Go = (
-        Start.to(Dispense_ABC, cond="GotTarget")
-        | Start.to(Start, cond="ReAskMission")
+        Start.to(Start, cond="ReAskMission")
+        |Start.to(Dispense_ABC, cond="GotTarget")
         | Start.to(Wander1, cond="StartWander")
         | Dispense_ABC.to(HandWritten)
         | HandWritten.to(Pickup_1234)
@@ -61,7 +61,7 @@ class SimpleStateMachine(StateMachine):
             return False
 
     def ReAskMission(self):
-        if not (self.actuator.seefinished_flag_true or self.actuator.asksuccess_flag):
+        if not (self.actuator.seefinished_flag or self.actuator.asksuccess_flag):
             rospy.sleep(1)
             return True
         else:
@@ -69,23 +69,20 @@ class SimpleStateMachine(StateMachine):
 
     def StartWander(self):
         if (
-            self.actuator.seefinished_flag_true == True
-            and self.actuator.asksuccess_flag == False
+            self.actuator.seefinished_flag == True
+            and self.actuator.asksuccess_flag == False and self.actuator.gamestart_flag == True
         ):
             rospy.logwarn("进入wander状态")
             return True
         else:
             return False
         
-    def after_transition(self,state):
+    def before_transition(self,state):
         Master_status = EveryoneStatus()
         Master_status.name = 'Master'
         Master_status.status = state.id
         self.actuator.location_pub.publish(Master_status)
-        '''
-        得到转移后的状态,比如从配药点到手写点,已经到达手写点，公布状态手写，并准备离开，主车公布的状态为手写
-        从车如果此时想从配药点到手写点，在转移时会发现主车状态依然为手写，所以不会转移
-        '''
+
 
     def on_enter_Start(self):
         """
@@ -95,10 +92,11 @@ class SimpleStateMachine(StateMachine):
         """
         self.actuator.actuator_ask_newtarget()
         self.actuator.allow2see_flag = True
-        self.actuator.seefinished_flag_true = self.actuator.seefinished_flag_temp
+        # self.actuator.seefinished_flag_true = self.actuator.seefinished_flag_temp
 
     def on_exit_Start(self):
         self.actuator.allow2see_flag = False
+        # self.actuator.seefinished_flag_true=False
 
     def on_enter_Dispense_ABC(self):
         """
@@ -207,9 +205,9 @@ class CarActuator(object):
         self.location_pub = rospy.Publisher("/location",EveryoneStatus,queue_size=10)
 
         self.asksuccess_flag = False  # 请求成功标志位
-        self.seefinished_flag_true = False  # 识别结束标志位
-        self.seefinished_flag_temp = False  # 识别结束标志位影子寄存
+        self.seefinished_flag = False  # 识别结束标志位
         self.allow2see_flag = True  # 允许识别标志位,物理上的
+        self.gamestart_flag = False # 游戏开始
 
         rospy.on_shutdown(self.actuator_shutdown)
 
@@ -226,7 +224,7 @@ class CarActuator(object):
         self.move_base_client.wait_for_server()
         rospy.loginfo("连上move_base 服务器了")
 
-        self.mission_client = rospy.ServiceProxy("mission", DestinationMsg)
+        self.mission_client = rospy.ServiceProxy("/mission", DestinationMsg)
         rospy.loginfo("调度器客户端正常启动了")
 
         self.mission_client.wait_for_service()
@@ -251,7 +249,7 @@ class CarActuator(object):
         self.mission_response = self.mission_client.call(
             0, self.mission_request.request_type, 0, 0
         )
-        rospy.loginfo("车辆代号:%d,请求新任务", 0)
+        rospy.loginfo("代号:%d,请求新任务", 0)
         rospy.loginfo(
             "Get:%c,Send:%d",
             self.responseToABC[self.mission_response.drug_location],
@@ -262,6 +260,7 @@ class CarActuator(object):
             and self.mission_response.deliver_destination != -1
         ):  # 不是负-1代表请求成功
             self.asksuccess_flag = True  # 请求成功
+            self.gamestart_flag = True #开始游戏
         else:  # 请求失败
             self.asksuccess_flag = False
 
@@ -281,7 +280,7 @@ class CarActuator(object):
     def actuator_dealCV_ask(self, req):
         if req.request == 0:  # "想看请求"
             rospy.loginfo("接受:[想看]")
-            self.seefinished_flag_temp = False  # 未看完=想看=接受到想看请求=有新一轮
+            self.seefinished_flag = False  # 未看完=想看=接受到想看请求=有新一轮
             if self.allow2see_flag:  # 已经到达识别区,允许识别
                 self.allow2see_flag = False
                 resp = PermissionMsgResponse(1)  # 可以看
@@ -293,7 +292,7 @@ class CarActuator(object):
         else:  # "看完了"
             rospy.loginfo("接受:[看完]")
             resp = PermissionMsgResponse(0)
-            self.seefinished_flag_temp = True  # 识别结束=不需要识别
+            self.seefinished_flag = True  # 识别结束=不需要识别
 
         return resp
 

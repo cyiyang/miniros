@@ -15,24 +15,24 @@ def thread_Slave():
     rospy.spin()
 
 def Death_Rattle():
-    rospy.loginfo("开始清理")
-    os.system("rosnode kill amcl")
-    os.system("rosnode kill base_control")
-    os.system("rosnode kill base_to_camera")
-    os.system("rosnode kill base_to_gyro")
-    os.system("rosnode kill base_to_laser")
-    os.system("rosnode kill base_to_link")
-    os.system("rosnode kill ekf_se")
-    os.system("rosnode kill joint_state_publisher")
-    os.system("rosnode kill laser_filter")
-    os.system("rosnode kill ls01d")
-    os.system("rosnode kill map_server")
-    os.system("rosnode kill joint_state_publisher")
-    os.system("rosnode kill laser_filter")
-    os.system("rosnode kill move_base")
-    os.system("rosnode kill robot_state_publisher")
-    os.system("rosnode kill act_watcher")
-    rospy.loginfo("全部节点已经清理,开始亡语")
+    rospy.logerr("开始清理")
+    os.system("rosnode kill /watcher/amcl")
+    os.system("rosnode kill /watcher/base_control")
+    os.system("rosnode kill /watcher/base_to_camera")
+    os.system("rosnode kill /watcher/base_to_gyro")
+    os.system("rosnode kill /watcher/base_to_laser")
+    os.system("rosnode kill /watcher/base_to_link")
+    os.system("rosnode kill /watcher/ekf_se")
+    os.system("rosnode kill /watcher/joint_state_publisher")
+    os.system("rosnode kill /watcher/laser_filter")
+    os.system("rosnode kill /watcher/ls01d")
+    os.system("rosnode kill /watcher/map_server")
+    os.system("rosnode kill /watcher/joint_state_publisher")
+    os.system("rosnode kill /watcher/laser_filter")
+    os.system("rosnode kill /watcher/move_base")
+    os.system("rosnode kill /watcher/robot_state_publisher")
+    os.system("rosnode kill /watcher/act_watcher")
+    rospy.logerr("全部节点已经清理,开始亡语")
     # 启动 Yolo
     # path = os.path.expanduser(
     #     "~/drug-deliverer/drug-deliverer/digit_recognizer/build"
@@ -81,13 +81,13 @@ class SimpleStateMachine(StateMachine):
             self.actuator.move_base_client.cancel_goal()
 
     def on_enter_Harbour(self):
-        rospy.loginfo("前往识别区")
+        rospy.logwarn("前往识别区")
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "watcher/map"
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose = point_special_watcher[1]
         if self.actuator.SendCar2Somewhere_move(goal) == True:
-            rospy.loginfo("到达识别区")
+            rospy.logwarn("到达识别区")
             rospy.sleep(2)
             Death_Rattle()
         else:
@@ -108,7 +108,7 @@ class SendCar2Somewhere(object):
         )
         rospy.loginfo("等待连接move_base服务器")
         self.move_base_client.wait_for_server()
-        rospy.loginfo("连上move_base 服务器了")
+        rospy.logwarn("连上move_base 服务器了")
 
         add_thread = threading.Thread(target=thread_Slave)
         add_thread.start()

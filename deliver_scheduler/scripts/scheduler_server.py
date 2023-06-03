@@ -83,7 +83,7 @@ def HandleRequests(req):
 
     if req.request_type == RequestType.Delivered.value:
         rospy.loginfo("Got Delivered!")
-        scheduler.Delivered()
+        scheduler.Delivered(req.car_no)
         return emptyResponse
 
 
@@ -135,11 +135,11 @@ if __name__ == "__main__":
     requestDrugTypeToInt = {"A": 0, "B": 1, "C": 2, None: -1}
 
     rospy.init_node("scheduler_server")
-    s = rospy.Service("mission", DestinationMsg, HandleRequests)
+    s = rospy.Service("/mission", DestinationMsg, HandleRequests)
     print("[scheduler] 调度器就绪!")
 
     drugCoolingTimeHandlerThread = threading.Thread(target=DrugCoolingTimeHandlerMain)
     drugCoolingTimeHandlerThread.setDaemon(True)
-    drugCoolingTimeHandlerThread.start()
+    # drugCoolingTimeHandlerThread.start()
 
     SchedulerServerMain()

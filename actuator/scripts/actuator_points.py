@@ -59,9 +59,9 @@ point_1234_slave = [
 ]  # D
 point_special_slave = [
     Pose(Point(0, 0, 0), quaternions[8]),       # 起点
-    Pose(Point(2.08, 3.8, 0), quaternions[9]),  # 手写数字
-    Pose(Point(2.616, 0.83, 0), quaternions[10]),  #运动1点
-    Pose(Point(0.35, 3.36, 0), quaternions[11]),
+    Pose(Point(1.9, 3.7, 0), quaternions[9]),  # 手写数字
+    Pose(Point(2.616, 1.0, 0), quaternions[10]),  #运动1点
+    Pose(Point(0.35, 2.9, 0), quaternions[11]),
 ]  # 运动2点
 
 
