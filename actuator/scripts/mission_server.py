@@ -6,7 +6,7 @@
 
 
 import rospy
-from actuator.srv import DestinationMsg, DestinationMsgRequest, DestinationMsgResponse
+from actuator.srv import DestinationMsg, DestinationMsgResponse
 import random
 
 
@@ -17,7 +17,7 @@ def doPrint(request):
     )
     if request.request_type == 1:
         response.drug_location = random.randint(0, 2)  # 返回0-2的随机数，代表ABC
-        response.deliver_destination = random.randint(1, 4)  # 返回0-3的随机数，代表1-4送药点
+        response.deliver_destination = random.randint(1, 5)  # 返回0-3的随机数，代表1-4送药点
         temp = response.deliver_destination
         rospy.loginfo("配药位置:%c,送药位置为:%d", responseToABC[response.drug_location], temp)
     else:
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     requestType_dic = {1: "GetNextTarget", 2: "DrugLoaded", 3: "Delivered"}
     responseToABC = {0: "A", 1: "B", 2: "C"}
     rospy.init_node("scheduler")  # 服务器节点起名为scheduler
-    server = rospy.Service("mission", DestinationMsg, doPrint)  # 话题名为mission
+    server = rospy.Service("/mission", DestinationMsg, doPrint)  # 话题名为mission
     rospy.loginfo("服务器启动")
     rospy.spin()
     pass
