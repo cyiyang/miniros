@@ -11,18 +11,20 @@ roslaunch robot_navigation navigation_rviz.launch
 修改move_base.launch文件，将cmd_vel话题重命名（打开文件一看就懂）
 * 观察系统结构
 rosrun rqt_graph rqt_graph
-# 编写的功能包(Master)
+# 需要启动的功能包(Master)
  * roslaunch usb_cam usb_cam-test.launch #有报错是正常的
  * roslaunch robot_navigation robot_navigation.launch
- * roslaunch actuator car0.launch #主车
+ * roslaunch actuator car_master.launch 
  * roslaunch char_recognizer char_recognizer.launch         # 真图
  * roslaunch char_recognizer char_recognizer_fake.launch    # 假图
  * roslaunch deliver_scheduler scheduler.launch
  * roslaunch board_reminder board_reminder.launch
-# 编写的功能包(Watcher)
+# 需要启动的功能包（Slave）
  * roslaunch robot_navigation robot_navigation.launch
- * roslaunch watcher_basic single_ticket.launch
- * roslaunch watcher_basic bridge.launch
+ * roslaunch actuator car_slave.launch 
+# 需要启动的功能包(Watcher)
+ * roslaunch robot_navigation robot_navigation.launch
+ * roslaunch actuator car_watcher.launch 
 
 
 # map参数
