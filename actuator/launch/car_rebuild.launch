@@ -1,3 +1,0 @@
-<launch>
-    <node pkg="actuator" type="actuator_rebuild.py" name="act_master" output="screen" />
-</launch>

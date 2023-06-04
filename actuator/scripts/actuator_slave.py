@@ -8,7 +8,6 @@ import rospy
 from actionlib_msgs.msg import GoalStatus
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from playsound import playsound
-from std_msgs.msg import String
 from statemachine import State, StateMachine
 from actuator.srv import (
     DestinationMsg,
@@ -114,15 +113,6 @@ class SimpleStateMachine(StateMachine):
             self.actuator.move_base_client.cancel_goal()
 
     def on_enter_HandWritten(self):
-        """
-        需要完成的工作：
-        1.向Move_Base发布关于手写数字的点
-        2.判断是否到达
-        3.如果到达请上报服务器
-        4.如果没有到达，请阻塞在这里
-        5.如果失败，请取消目标点
-        6.对第一次到达进行处理
-        """
         rospy.loginfo("前往手写数字识别区")
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "slave/map"
@@ -187,12 +177,24 @@ class SimpleStateMachine(StateMachine):
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
     def on_enter_Wander2(self):  
-        rospy.loginfo("前往运动点（取药区）")
+
+        rospy.loginfo("前往手写数字识别区")
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose = point_special_slave[3]
+        goal.target_pose.pose = point_special_slave[1]
         if self.actuator.actuator_move(goal) == True:
+            rospy.loginfo("到达手写数字点")
+        else:
+            rospy.logerr("手写数字点失败")
+            self.actuator.move_base_client.cancel_goal()
+
+        rospy.loginfo("前往运动点（取药区）")
+        goal2 = MoveBaseGoal()
+        goal2.target_pose.header.frame_id = "slave/map"
+        goal2.target_pose.header.stamp = rospy.Time.now()
+        goal2.target_pose.pose = point_special_slave[3]
+        if self.actuator.actuator_move(goal2) == True:
             rospy.loginfo("到达运动点（配药区）")
 
         else:
