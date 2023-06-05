@@ -62,14 +62,7 @@ class SimpleStateMachine(StateMachine):
             return True
         else:
             return False
-
-    def ReAskMission(self):
-        if not (self.actuator.seefinished_flag or self.actuator.asksuccess_flag):
-            rospy.sleep(1)
-            return True
-        else:
-            return False
-
+        
     def StartWander(self):
         if (
             self.actuator.seefinished_flag == True
@@ -79,6 +72,14 @@ class SimpleStateMachine(StateMachine):
             return True
         else:
             return False
+
+    def ReAskMission(self):
+        if not (self.GotTarget() or self.StartWander()):
+            rospy.sleep(1)
+            return True
+        else:
+            return False
+
         
     def GetRubbish(self):
         if (self.actuator.mission_response.deliver_destination==5):
@@ -102,11 +103,13 @@ class SimpleStateMachine(StateMachine):
         """
         self.actuator.actuator_ask_newtarget()
         self.actuator.allow2see_flag = True
-        # self.actuator.seefinished_flag_true = self.actuator.seefinished_flag_temp
+        while not self.actuator.seefinished_flag : #标志位为False时，代表收到了新请求。
+            rospy.loginfo("接收到识别器请求，请原地等待")
+
 
     def on_exit_Start(self):
         self.actuator.allow2see_flag = False
-        # self.actuator.seefinished_flag_true=False
+
 
     def on_enter_Dispense_ABC(self):
         """
@@ -135,15 +138,7 @@ class SimpleStateMachine(StateMachine):
             self.actuator.move_base_client.cancel_goal()
 #所有都有可能要改成exit，或者调整广播
     def on_enter_HandWritten(self):
-        """
-        需要完成的工作：
-        1.向Move_Base发布关于手写数字的点
-        2.判断是否到达
-        3.如果到达请上报服务器
-        4.如果没有到达，请阻塞在这里
-        5.如果失败，请取消目标点
-        6.对第一次到达进行处理
-        """
+
         rospy.loginfo("前往手写数字识别区")
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "map"
@@ -179,6 +174,7 @@ class SimpleStateMachine(StateMachine):
         goal.target_pose.pose =  point_special_master[3]
         if self.actuator.actuator_move(goal) == True:
             rospy.loginfo("到达垃圾桶")
+            self.actuator.actuator_throwRubbish()
         else:
             rospy.logerr("丢垃圾失败！")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
@@ -298,6 +294,11 @@ class CarActuator(object):
         self.mission_request.request_type = 3  # 请求包编号为“完成送药/1234”
         self.mission_client.call(0, self.mission_request.request_type, 0, 0)
 
+    def actuator_throwRubbish(self):
+        # playsound("/home/EPRobot/Music/throwRubbish.mp3")
+        self.mission_request.request_type = 3  # 请求包编号为“完成送药/1234”
+        self.mission_client.call(0, self.mission_request.request_type, 0, 0)
+
     # 处理来自识别器的请求
     def actuator_dealCV_ask(self, req):
         if req.request == 0:  # "想看请求"
@@ -309,7 +310,6 @@ class CarActuator(object):
                 rospy.loginfo("回复:[可以]")
             else:
                 resp = PermissionMsgResponse(0)  # 不可以
-
                 rospy.loginfo("回复:[拒绝]")
         else:  # "看完了"
             rospy.loginfo("接受:[看完]")

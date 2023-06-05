@@ -65,7 +65,7 @@ class Scheduler:
             )
             for drugType, interval in self.drugSupplementInterval.items()
         }
-        for drugType, timer in self.drugSupplementTimers:
+        for drugType, timer in self.drugSupplementTimers.items():
             timer.start()
 
     def GetNextTarget(self, car_id=0):
