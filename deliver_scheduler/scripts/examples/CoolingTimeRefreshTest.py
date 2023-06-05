@@ -40,9 +40,9 @@ if __name__ == "__main__":
     assert scheduler.GetNeedToChangeStatus() == NeedToChangeStatus.SPEED_UP.value
     scheduler.UpdateDrugCoolingTime(NeedToChangeStatus.SPEED_UP.value)
     print(
-        scheduler.timers[0].getRemainTime(),
-        scheduler.timers[1].getRemainTime(),
-        scheduler.timers[2].getRemainTime(),
+        scheduler.drugSupplementTimers["A"].getRemainTime(),
+        scheduler.drugSupplementTimers["B"].getRemainTime(),
+        scheduler.drugSupplementTimers["C"].getRemainTime(),
     )
     time.sleep(3.1)
     scheduler.Delivered()
@@ -62,9 +62,9 @@ if __name__ == "__main__":
         and scheduler.GetRemainDrug("C") == 8
     )
     print(
-        scheduler.timers[0].getRemainTime(),
-        scheduler.timers[1].getRemainTime(),
-        scheduler.timers[2].getRemainTime(),
+        scheduler.drugSupplementTimers["A"].getRemainTime(),
+        scheduler.drugSupplementTimers["B"].getRemainTime(),
+        scheduler.drugSupplementTimers["C"].getRemainTime(),
     )
     time.sleep(3)
     scheduler.DrugLoaded()

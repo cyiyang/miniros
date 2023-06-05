@@ -60,6 +60,7 @@ add_service_files(
   FILES
   DestinationMsg.srv
   ChangeTimeResult.srv
+  NeedToSeeMsg.srv
 )
 
 ## Generate actions in the 'action' folder

@@ -3,6 +3,7 @@ import threading
 import time
 from enum import Enum, unique
 
+from reloadable_timer import ReloadableTimer
 from statemachine import State, StateMachine
 from statemachine.exceptions import TransitionNotAllowed
 
@@ -24,8 +25,15 @@ class Scheduler:
         self.classWeights = {"A": 20, "B": 15, "C": 10}
         self.CAR_CNT = 2
         self.nextTarget = [None] * self.CAR_CNT
-        self.queueLock = threading.Lock()  # May be implemented
+        self.queueLock = threading.RLock()
         self.DEBUG = DEBUG
+
+        # 三种方案下的药物刷新时间
+        self.DRUG_PERIOD = {
+            CoolingTimePlan.PERIOD_1: {"A": 120, "B": 60, "C": 40},
+            CoolingTimePlan.PERIOD_2: {"A": 60, "B": 50, "C": 20},
+            CoolingTimePlan.PERIOD_3: {"A": 40, "B": 30, "C": 15},
+        }
 
         # 起始时三种药各有一瓶
         self.drugRemain = {"A": 1, "B": 1, "C": 1}
@@ -35,7 +43,8 @@ class Scheduler:
         if DEBUG:
             self.drugSupplementInterval = {"A": 12, "B": 6, "C": 4}
         else:
-            self.drugSupplementInterval = {"A": 120, "B": 60, "C": 40}
+            # 国赛版本
+            self.drugSupplementInterval = {"A": 180, "B": 120, "C": 60}
 
         self.__noTarget = {
             "requestType": None,
@@ -47,28 +56,16 @@ class Scheduler:
             "deliverDestination": 5,
         }
 
-        # self.__threads = []
-        # self.__threads.append(
-        #     threading.Thread(target=self.__DrugTracerMain, args=("A"))
-        # )
-        # self.__threads.append(
-        #     threading.Thread(target=self.__DrugTracerMain, args=("B"))
-        # )
-        # self.__threads.append(
-        #     threading.Thread(target=self.__DrugTracerMain, args=("C"))
-        # )
-
-        # self.running = True
-        # for thread in self.__threads:
-        #     thread.start()
-
         self.coolingTimeStateMachine = CoolingTime()
 
-        self.timers = [
-            ReloadableTimer(interval, True, self.__UpdateRemainDrug, [drugType, 1])
+        # 定义记录药物补充的定时器
+        self.drugSupplementTimers = {
+            drugType: ReloadableTimer(
+                interval, True, self.__UpdateRemainDrug, [drugType, 1]
+            )
             for drugType, interval in self.drugSupplementInterval.items()
-        ]
-        for timer in self.timers:
+        }
+        for drugType, timer in self.drugSupplementTimers:
             timer.start()
 
     def GetNextTarget(self, car_id=0):
@@ -122,6 +119,7 @@ class Scheduler:
                     self.nextTarget[car_id]["requestType"] = mostStockedDrugType
                     return self.nextTarget[car_id], TargetStatus.DROP_DRUG.value
 
+            # 当也没有药物需要清理时，返回无目标
             return self.__noTarget, targetStatus
 
         else:
@@ -164,8 +162,9 @@ class Scheduler:
         周期性运行，更新队伍中优先级
         """
         # TODO: 实现根据时间调整优先级
-        # 此处不能加锁，否则在 GetNextTarget 中调用该函数时会导致死锁；因此将该方法变成私有方法
-        self.queue.sort(key=lambda x: x["priority"], reverse=True)
+        # 可重入锁允许在单一线程中多次获取锁，而不引起死锁
+        with self.queueLock:
+            self.queue.sort(key=lambda x: x["priority"], reverse=True)
 
     def DrugLoaded(self, car_id=0):
         """当小车拾取药物，调用该函数。该函数现在不会进行任何操作"""
@@ -252,7 +251,7 @@ class Scheduler:
                     # 避免程序直接退出
                     raise ValueError("不允许的状态转换!")
                 return False
-            for timer in self.timers:
+            for timer in self.drugSupplementTimers:
                 # 在当前的基础上以 50% 的比率提高或降低三个配药窗口的配送周期，即变为原时间的 1 - 0.5 = 0.5 倍
                 timer.setRemainTime(timer.getRemainTime() / 2.0)
                 timer.setNewInterval(timer.getReloadInterval() / 2.0)
@@ -262,13 +261,18 @@ class Scheduler:
             except TransitionNotAllowed:
                 print("不允许的状态转换!")
                 return False
-            for timer in self.timers:
+            for timer in self.drugSupplementTimers:
                 # 在当前的基础上以 50% 的比率提高或降低三个配药窗口的配送周期，即提升至原时间的 1 + 0.5 = 1.5 倍
                 timer.setRemainTime(timer.getRemainTime() * (1 + 0.5))
                 timer.setNewInterval(timer.getReloadInterval() * (1 + 0.5))
 
     def ForgiveCurrentTask(self, car_no):
         return
+
+    def SetDrugCoolingTime(self, plan):
+        """设置药物刷新时间为周期 1, 2 或 3"""
+        for drugType, newInterval in self.DRUG_PERIOD[plan].items():
+            self.drugSupplementTimers[drugType].restartWithInterval(newInterval)
 
 
 @unique
@@ -284,76 +288,13 @@ TargetStatus = Enum(
 )
 
 
-class ReloadableTimer:
-    def __init__(self, interval, autoReload, function, args=[], kwargs={}):
-        self.interval = interval
-        self.reloadInterval = interval
-        self.function = function
-        self.args = args
-        self.kwargs = kwargs
-        self.thread = None
-        self.running = False
-        self.startTime = None
-        self.autoReload = autoReload
-
-    def start(self):
-        self.running = True
-        self.startTime = time.time()
-        self.thread = threading.Timer(self.interval, self._run)
-        # setDaemon(True) 后，当主线程退出时，其他定时器线程也将退出
-        self.thread.setDaemon(True)
-        self.thread.start()
-
-    def _run(self):
-        self.running = False
-        self.startTime = None
-        threading.Thread(target=self.function(*self.args, **self.kwargs)).start()
-        if self.autoReload:
-            # 自动重载会以 self.reloadInterval 指定的间隔进行
-            self.restart(self.reloadInterval)
-
-    def stop(self):
-        self.thread.cancel()
-        self.running = False
-
-    def restart(self, interval=None):
-        """使得定时器的剩余时间为 interval，但不影响定时器的重载值"""
-        if interval is not None:
-            self.interval = interval
-        if self.thread is not None:
-            self.stop()
-        self.start()
-
-    def isAlive(self):
-        return self.thread and self.running
-
-    def getElapsedTime(self):
-        """若没有执行过 setRemainTime, 该方法会返回start后的时间，否则会返回上一次 setRemainTime 后经过的时间"""
-        if not self.startTime:
-            return None
-        return time.time() - self.startTime
-
-    def getRemainTime(self):
-        """返回本次定时剩余的时间, 如果定时器没有启动，则会返回 None"""
-        if not self.startTime:
-            return None
-        return max(0, self.interval - self.getElapsedTime())
-
-    def setRemainTime(self, remainTime):
-        """临时修改定时器的剩余时间，本轮定时器超时后，将按原有的周期继续运行"""
-        self.restart(remainTime)
-
-    def setNewInterval(self, newInterval):
-        """修改下一周期开始的定时周期，不会影响当前周期的剩余时间"""
-        self.reloadInterval = newInterval
-
-    def getReloadInterval(self):
-        return self.reloadInterval
-
-
 NeedToChangeStatus = Enum(
     "NeedToChangeStatus", ("SPEED_UP", "DONT_CHANGE", "SLOW_DOWN")
 )
+
+CoolingTimePlan = Enum("CoolingTimePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
+
+NeedToSeePlan = Enum("NeedToSeePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
 
 
 class CoolingTime(StateMachine):

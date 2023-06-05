@@ -3,17 +3,18 @@
 import sys
 import threading
 
-# Future warning 不知道是干什么的
-# sys.path.append("/home/ncut/scheduler_ws/devel/lib/python2.7/dist-packages")
 import rospy
+from reloadable_timer import ReloadableTimer
 from scheduler import NeedToChangeStatus, RequestType, Scheduler, TargetStatus
 from SocketService import SocketServiceMaster
-from deliver_scheduler.srv import (
-    ChangeTimeResult,
-    ChangeTimeResultResponse,
-    DestinationMsg,
-    DestinationMsgResponse,
-)
+
+from deliver_scheduler.srv import (ChangeTimeResult, ChangeTimeResultResponse,
+                                   DestinationMsg, DestinationMsgResponse)
+
+# Future warning 不知道是干什么的
+# sys.path.append("/home/ncut/scheduler_ws/devel/lib/python2.7/dist-packages")
+
+
 
 DEBUG = 0
 # WARNING: 网络环境变化时，多处IP需要修改，建议通过环境变量获取地址和端口等信息
@@ -100,10 +101,7 @@ def DrugCoolingTimeHandlerMain():
         slave_addr=SLAVE_ADDR, slave_port=SLAVE_PORT, slave_ready_port=SLAVE_READY_PORT
     )
     rospy.loginfo("[scheduler] 等待连接到slave...")
-    # playsound("/home/EPRobot/Music/pick_up.mp3")
     needToChangeService.wait_for_service()
-    # rospy.loginfo("[scheduler] 药物刷新时间检测启动!")
-    # playsound("/home/EPRobot/Music/dispense.mp3")
     rospy.loginfo("[scheduler] 成功连接到slave!")
 
     while not rospy.is_shutdown():
