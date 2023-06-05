@@ -33,13 +33,16 @@ class SimpleStateMachine(StateMachine):
     Zero = State("Zero")
     Wander1 = State("Wander1")
     Wander2 = State("Wander2")
+    Rubbish = State("Rubbish")
     # Go是一个事件Event，这个Event是由几个转移Transitions组成
     Go = (
         Start.to(Start, cond="ReAskMission")
         |Start.to(Dispense_ABC, cond="GotTarget")
         | Start.to(Wander1, cond="StartWander")
         | Dispense_ABC.to(HandWritten)
+        | HandWritten.to(Rubbish,cond="GetRubbish")
         | HandWritten.to(Pickup_1234)
+        | Rubbish.to(Zero)
         | Pickup_1234.to(Zero)
         | Zero.to(Start)
         | Wander1.to(Wander2)
@@ -73,6 +76,13 @@ class SimpleStateMachine(StateMachine):
             and self.actuator.asksuccess_flag == False and self.actuator.gamestart_flag == True
         ):
             rospy.logwarn("进入wander状态")
+            return True
+        else:
+            return False
+        
+    def GetRubbish(self):
+        if (self.actuator.mission_response.deliver_destination==5):
+            rospy.logwarn("丢弃")
             return True
         else:
             return False
@@ -118,7 +128,7 @@ class SimpleStateMachine(StateMachine):
             newABC = self.actuator.responseToABC[
                 self.actuator.mission_response.drug_location
             ]
-            rospy.loginfo("到达配药区%c", newABC)
+            rospy.logwarn("到达配药区%c", newABC)
             self.actuator.actuator_updateABC()
         else:
             rospy.logerr("配药失败")
@@ -154,11 +164,23 @@ class SimpleStateMachine(StateMachine):
             self.actuator.mission_response.deliver_destination
         ]
         if self.actuator.actuator_move(goal) == True:
-            rospy.loginfo("到达取药区%d", self.actuator.mission_response.deliver_destination)
+            rospy.logwarn("到达取药区%d", self.actuator.mission_response.deliver_destination)
             self.actuator.actuator_update1234()
 
         else:
             rospy.logerr("取药失败")
+            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
+    
+    def on_enter_Rubbish(self):
+        rospy.logwarn("前往垃圾桶")
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose =  point_special_master[3]
+        if self.actuator.actuator_move(goal) == True:
+            rospy.loginfo("到达垃圾桶")
+        else:
+            rospy.logerr("丢垃圾失败！")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
     def on_enter_Zero(self):
@@ -250,7 +272,7 @@ class CarActuator(object):
             0, self.mission_request.request_type, 0, 0
         )
         rospy.loginfo("代号:%d,请求新任务", 0)
-        rospy.loginfo(
+        rospy.logerr(
             "Get:%c,Send:%d",
             self.responseToABC[self.mission_response.drug_location],
             self.mission_response.deliver_destination,
