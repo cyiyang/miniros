@@ -29,7 +29,7 @@ class Scheduler:
 
         # 起始时三种药各有一瓶
         self.drugRemain = {"A": 1, "B": 1, "C": 1}
-        self.drugRemainLock = threading.Lock()
+        self.drugRemainLock = threading.RLock()
 
         # self.drugSupplementInterval = {"A": 120, "B": 60, "C": 40}
         if DEBUG:
@@ -40,6 +40,11 @@ class Scheduler:
         self.__noTarget = {
             "requestType": None,
             "deliverDestination": None,
+        }
+
+        self.__dropDrugTarget = {
+            "requestType": "C",
+            "deliverDestination": 5,
         }
 
         # self.__threads = []
@@ -75,28 +80,53 @@ class Scheduler:
             {"requestType": "A", "deliverDestination": 1}
             {"requestType": None, "deliverDestination": None}
         """
-        with self.queueLock:
-            if self.nextTarget[car_id] is None:
+        targetStatus = TargetStatus.SUCCESS.value
+
+        if self.nextTarget[car_id] is None:
+            with self.queueLock:
                 if self.queue:
                     # 小哥有取药需求时，更新优先级
                     self.__UpdatePriority()
                     for index, target in enumerate(self.queue):
-                        # TODO: 实现优先级高的药物不可用时切换至下一类药物
+                        # 当小哥要求的药物有剩余时，可分配任务
                         if self.GetRemainDrug(target["requestType"]) >= 1:
+                            # 将目标赋予请求任务的车辆
                             self.nextTarget[car_id] = self.queue.pop(index)
+
                             # 为了避免小车对同一送药需求、不同配送目的地导致的“抢药”问题，将药物的更新放在这里处理
                             self.__UpdateRemainDrug(
                                 self.nextTarget[car_id]["requestType"], -1
                             )
+
                             return self.nextTarget[car_id], TargetStatus.SUCCESS.value
-                    # 循环正常结束，表明需求的药物现在都没有，应返回无目标
-                    return self.__noTarget, TargetStatus.NO_DRUG_REMAIN.value
-                    # self.nextTarget = self.queue.pop()
+
+                    # 循环正常结束，表明需求的药物现在都没有
+                    targetStatus = TargetStatus.NO_DRUG_REMAIN.value
                 else:
-                    # 小哥没有取药需求
-                    return self.__noTarget, TargetStatus.NO_MORE_REQUEST.value
-            else:
-                return self.nextTarget[car_id], TargetStatus.SUCCESS.value
+                    # 队列为空，表明小哥没有取药需求
+                    targetStatus = TargetStatus.NO_MORE_REQUEST.value
+
+            # 没有正常目标时，处理多余的药物
+            with self.drugRemainLock:
+                # 获取存量最多的药物的类型和存量
+                mostStockedDrugType, mostStockedDrugAmount = max(
+                    self.drugRemain.items(), key=lambda x: x[1]
+                )
+                if mostStockedDrugAmount < 3:
+                    # 如果存量最多的药物不足3，不需要清理
+                    pass
+                else:
+                    # 将存量药物最多的存量-1
+                    self.__UpdateRemainDrug(mostStockedDrugType, -1)
+                    self.nextTarget[car_id] = self.__dropDrugTarget
+                    self.nextTarget[car_id]["requestType"] = mostStockedDrugType
+                    return self.nextTarget[car_id], TargetStatus.DROP_DRUG.value
+
+            return self.__noTarget, targetStatus
+
+        else:
+            # 小车多次请求目标，返回上一次的目标
+            return self.nextTarget[car_id], TargetStatus.SUCCESS.value
 
     def Delivered(self, car_id=0):
         """
@@ -249,7 +279,9 @@ class RequestType(Enum):
     Delivered = 3
 
 
-TargetStatus = Enum("TargetStatus", ("SUCCESS", "NO_DRUG_REMAIN", "NO_MORE_REQUEST"))
+TargetStatus = Enum(
+    "TargetStatus", ("SUCCESS", "NO_DRUG_REMAIN", "NO_MORE_REQUEST", "DROP_DRUG")
+)
 
 
 class ReloadableTimer:

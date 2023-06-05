@@ -62,6 +62,9 @@ def HandleRequests(req):
         response.drug_location = requestDrugTypeToInt[schedulerResponse["requestType"]]
         response.deliver_destination = schedulerResponse["deliverDestination"]
 
+        if status == TargetStatus.DROP_DRUG.value:
+            rospy.loginfo("[scheduler] 执行药品清理!")
+
         # 对于当前无目标的情形，schedulerResponse的两个字段均为None, 在这里用-1表示None
         if response.drug_location is None or response.deliver_destination is None:
             response.drug_location = -1
@@ -121,7 +124,9 @@ def DrugCoolingTimeHandlerMain():
             if change_success:
                 scheduler.UpdateDrugCoolingTime(need)
                 rospy.logwarn("[watcher to scheduler] 修改成功!")
-                print("当前状态:" + str(scheduler.coolingTimeStateMachine.current_state.value))
+                print(
+                    "当前状态:" + str(scheduler.coolingTimeStateMachine.current_state.value)
+                )
 
 
 if __name__ == "__main__":

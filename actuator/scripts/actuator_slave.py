@@ -55,7 +55,7 @@ class SimpleStateMachine(StateMachine):
             while self.actuator.master_location == state.id :
                 rospy.logwarn("主从状态一致，请等待")
 
-         
+
     def GotTarget(self):
         if(self.actuator.master_location == 'HandWritten' and self.actuator.asksuccess_flag == True):
             rospy.logwarn("出发！")
@@ -71,14 +71,14 @@ class SimpleStateMachine(StateMachine):
             return True
         else:
             return False
-        
+
     def ReAskMission(self):
         if self.actuator.master_location == 'Start' or (not self.GotTarget() and not self.StartWander()): #主车在Start，从车只能reask
             return True
         else:
             return False
 
-    
+
     def on_enter_Start(self):
         self.actuator.actuator_ask_newtarget()
         rospy.sleep(1)
@@ -94,7 +94,7 @@ class SimpleStateMachine(StateMachine):
         else:
             rospy.logerr("前往1号运动点失败")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
-        
+
         rospy.loginfo("前往配药区")
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "slave/map"
@@ -176,7 +176,7 @@ class SimpleStateMachine(StateMachine):
             rospy.logerr("前往1号运动点失败")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
-    def on_enter_Wander2(self):  
+    def on_enter_Wander2(self):
 
         rospy.loginfo("前往手写数字识别区")
         goal = MoveBaseGoal()
@@ -284,7 +284,7 @@ class CarActuator(object):
             else:
                 rospy.logerr("没超时但失败")
                 return False
-    
+
     def actuator_deallocation(self,msg):
         if msg.name == 'Master':
             self.master_location=msg.status
