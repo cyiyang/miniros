@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import rospy
 from scheduler import NeedToChangeStatus, RequestType, Scheduler, TargetStatus
 

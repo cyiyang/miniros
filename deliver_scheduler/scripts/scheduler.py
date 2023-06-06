@@ -8,7 +8,7 @@ from statemachine import State, StateMachine
 from statemachine.exceptions import TransitionNotAllowed
 
 
-class Scheduler:
+class Scheduler(object):
     """
     调度器对象
     """
