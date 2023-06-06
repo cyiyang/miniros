@@ -27,7 +27,7 @@ ping -c 1 watcher > /dev/null
 if [ $? -eq 0 ]; then
     rsync -av --delete /home/$(whoami)/drug-deliverer/actuator/ watcher@watcher:/home/watcher/robot_ws/src/actuator/
     rsync -av --delete /home/$(whoami)/drug-deliverer/param/watcher_param/ watcher@watcher:/home/watcher/robot_ws/src/robot_navigation/param/
-    rsync -av --delete /home/$(whoami)/drug-deliverer/digit_recognizer/ watcher@watcher:/home/watcher/digit_recognizer/
+    # rsync -av --delete /home/$(whoami)/drug-deliverer/digit_recognizer/ watcher@watcher:/home/watcher/digit_recognizer/
     echo "[Watcher]成功将本地drug-deliverer仓库的修改同步到小车的工作空间"
 else
     echo "[Watcher]无法连接到小车，与小车的同步不会进行"

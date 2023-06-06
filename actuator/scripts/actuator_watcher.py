@@ -35,9 +35,7 @@ def Death_Rattle():
     os.system("rosnode kill /watcher/act_watcher")
     rospy.logerr("全部节点已经清理,开始亡语")
     # 启动 Yolo
-    path = os.path.expanduser("~/digit_recognizer/build")
-    os.chdir(path)
-    os.system("./digit_recognizer_demo")
+    os.system("/home/watcher/digit_recognizer/build/digit_recognizer_demo")
     exit()
 
 
