@@ -24,6 +24,11 @@ rosrun rqt_graph rqt_graph
  * roslaunch robot_navigation robot_navigation.launch
  * roslaunch actuator car_watcher.launch 
 
+# usb-cam使用注意
+出现[image_view-3] process has died [pid 22787, exit code -11, cmd /opt/ros/melodic/lib/image_view/image_view image:=/usb_cam/image_raw __name:=image_view __log:=/home/EPRobot/.ros/log/8cd2c622-0464-11ee-9185-000c29f076f7/image_view-3.log].
+log file: /home/EPRobot/.ros/log/8cd2c622-0464-11ee-9185-000c29f076f7/image_view-3*.log
+的错误警告为正常现象，请勿慌张
+
 
 # map参数
 * 以114\*147pixel的fake_map（人为制作，不是slam建图）为基础，以左上角为(0,0)的原点右x正方向，下y正方向的图片坐标系
