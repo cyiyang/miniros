@@ -5,7 +5,7 @@ import threading
 import time
 
 
-class ReloadableTimer:
+class ReloadableTimer(object):
     def __init__(self, interval, autoReload, function, args=[], kwargs={}):
         self.interval = interval
         self.reloadInterval = interval
@@ -18,6 +18,8 @@ class ReloadableTimer:
         self.autoReload = autoReload
 
     def start(self):
+        if self.running:
+            return
         self.running = True
         self.startTime = time.time()
         self.thread = threading.Timer(self.interval, self._run)

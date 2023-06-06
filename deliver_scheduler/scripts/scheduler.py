@@ -287,6 +287,7 @@ class Scheduler(object):
         raise NotImplementedError("请在子类中实现该方法!")
 
     def SetNeedToSeeInterval(self, newInterval):
+        self.remindInterval = newInterval
         self.reminder.restartWithInterval(newInterval)
 
 
