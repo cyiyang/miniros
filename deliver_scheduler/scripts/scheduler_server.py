@@ -4,16 +4,9 @@ import sys
 import threading
 
 import rospy
-from scheduler import NeedToChangeStatus, RequestType, Scheduler, TargetStatus
+from scheduler import CoolingTimePlan, NeedToChangeStatus
 from scheduler_ros import SchedulerROS
 from SocketService import SocketServiceMaster
-
-from deliver_scheduler.srv import (
-    ChangeTimeResult,
-    ChangeTimeResultResponse,
-    DestinationMsg,
-    DestinationMsgResponse,
-)
 
 # Future warning 不知道是干什么的
 # sys.path.append("/home/ncut/scheduler_ws/devel/lib/python2.7/dist-packages")
@@ -24,6 +17,7 @@ DEBUG = 0
 SLAVE_ADDR = "192.168.137.172"
 SLAVE_PORT = 12345
 SLAVE_READY_PORT = 11515
+FIXED_PERIOD = True
 
 
 def SchedulerServerMain():
@@ -69,6 +63,10 @@ def DrugCoolingTimeHandlerMain():
 if __name__ == "__main__":
     scheduler = SchedulerROS()
     scheduler.RegisterService()
+    if FIXED_PERIOD:
+        rospy.logwarn("scheduler 正在以固定的周期运行!")
+        scheduler.SetNeedToSeeInterval(60)
+        scheduler.SetDrugCoolingTime(CoolingTimePlan.PERIOD_3)
     scheduler.start()
 
     rospy.loginfo("[scheduler] 调度器就绪!")

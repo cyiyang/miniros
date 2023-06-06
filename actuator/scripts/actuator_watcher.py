@@ -14,6 +14,7 @@ from actuator.msg import EveryoneStatus
 def thread_Slave():
     rospy.spin()
 
+
 def Death_Rattle():
     rospy.logerr("开始清理")
     os.system("rosnode kill /watcher/amcl")
@@ -34,11 +35,9 @@ def Death_Rattle():
     os.system("rosnode kill /watcher/act_watcher")
     rospy.logerr("全部节点已经清理,开始亡语")
     # 启动 Yolo
-    # path = os.path.expanduser(
-    #     "~/drug-deliverer/drug-deliverer/digit_recognizer/build"
-    # )
-    # os.chdir(path)
-    # os.system("./digit_recognizer_demo")
+    path = os.path.expanduser("~/digit_recognizer/build")
+    os.chdir(path)
+    os.system("./digit_recognizer_demo")
     exit()
 
 
@@ -48,13 +47,13 @@ class SimpleStateMachine(StateMachine):
         super(SimpleStateMachine, self).__init__()
 
     Start = State("Start", initial=True)
-    Temporary =  State("Temporary")
-    Harbour  =  State("Harbour")
+    Temporary = State("Temporary")
+    Harbour = State("Harbour")
     # Go是一个事件Event，这个Event是由几个转移Transitions组成
     Single_Ticket = (
         Start.to(Temporary, cond="AllowedGo")
-        |Temporary.to(Harbour)
-        |Start.to(Start,cond="Wait")
+        | Temporary.to(Harbour)
+        | Start.to(Start, cond="Wait")
     )
 
     def Wait(self):
@@ -63,11 +62,11 @@ class SimpleStateMachine(StateMachine):
         return True
 
     def AllowedGo(self):
-        if(self.actuator.master_location == 'Dispense_ABC'):
+        if self.actuator.master_location == "Dispense_ABC":
             return True
         else:
             return False
-    
+
     def on_enter_Temporary(self):
         rospy.loginfo("前往临时停靠点")
         goal = MoveBaseGoal()
@@ -99,9 +98,14 @@ class SendCar2Somewhere(object):
     def __init__(self):
         rospy.init_node("act_watcher")
         rospy.on_shutdown(self.SendCar2Somewhere_shutdown)
-        self.location_sub = rospy.Subscriber("/location",EveryoneStatus,self.SendCar2Somewhere_deallocation,queue_size=10)
+        self.location_sub = rospy.Subscriber(
+            "/location",
+            EveryoneStatus,
+            self.SendCar2Somewhere_deallocation,
+            queue_size=10,
+        )
 
-        self.master_location = 'Start' #从车一开始默认为Start
+        self.master_location = "Start"  # 从车一开始默认为Start
 
         self.move_base_client = actionlib.SimpleActionClient(
             "move_base", MoveBaseAction
@@ -113,7 +117,7 @@ class SendCar2Somewhere(object):
         add_thread = threading.Thread(target=thread_Slave)
         add_thread.start()
         rospy.loginfo("deal Master thread OK")
-        
+
     def SendCar2Somewhere_shutdown(self):
         rospy.logerr("Stop the robot")
         self.move_base_client.cancel_goal()  # 取消当前目标导航点
@@ -132,11 +136,12 @@ class SendCar2Somewhere(object):
             else:
                 rospy.logerr("没超时但失败")
                 return False
-    
-    def SendCar2Somewhere_deallocation(self,msg):
-        rospy.loginfo("Get:%s,%s",msg.name,msg.status)
-        if msg.name == 'Master':
-            self.master_location=msg.status
+
+    def SendCar2Somewhere_deallocation(self, msg):
+        rospy.loginfo("Get:%s,%s", msg.name, msg.status)
+        if msg.name == "Master":
+            self.master_location = msg.status
+
 
 if __name__ == "__main__":
     try:
