@@ -35,8 +35,6 @@ def Death_Rattle():
     os.system("rosnode kill /watcher/act_watcher")
     rospy.logerr("全部节点已经清理,开始亡语")
     # 启动 Yolo
-    path = os.path.expanduser("~/digit_recognizer/build")
-    os.chdir(path)
     os.system("/home/watcher/digit_recognizer/build/digit_recognizer_demo")
     exit()
 
@@ -67,6 +65,12 @@ class SimpleStateMachine(StateMachine):
         else:
             return False
 
+    def before_transition(self,state):
+        Watcher_status = EveryoneStatus()
+        Watcher_status.name = 'Watcher'
+        Watcher_status.status = state.id
+        self.actuator.location_pub.publish(Watcher_status)
+
     def on_enter_Temporary(self):
         rospy.loginfo("前往临时停靠点")
         goal = MoveBaseGoal()
@@ -87,6 +91,10 @@ class SimpleStateMachine(StateMachine):
         goal.target_pose.pose = point_special_watcher[1]
         if self.actuator.SendCar2Somewhere_move(goal) == True:
             rospy.logwarn("到达识别区")
+            Watcher_status = EveryoneStatus()
+            Watcher_status.name = 'Watcher'
+            Watcher_status.status = 'Harbour'
+            self.actuator.location_pub.publish(Watcher_status)
             rospy.sleep(2)
             Death_Rattle()
         else:
@@ -102,6 +110,11 @@ class SendCar2Somewhere(object):
             "/location",
             EveryoneStatus,
             self.SendCar2Somewhere_deallocation,
+            queue_size=10,
+        )
+        self.location_pub = rospy.Publisher(
+            "/location",
+            EveryoneStatus,
             queue_size=10,
         )
 
@@ -138,8 +151,8 @@ class SendCar2Somewhere(object):
                 return False
 
     def SendCar2Somewhere_deallocation(self, msg):
-        rospy.loginfo("Get:%s,%s", msg.name, msg.status)
         if msg.name == "Master":
+            # rospy.loginfo("Get:%s,%s", msg.name, msg.status)
             self.master_location = msg.status
 
 

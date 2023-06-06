@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import threading
-from actuator_points import point_ABC_master, point_1234_master, point_special_master
+from actuator_points import point_ABC_slave, point_1234_slave, point_special_slave
 import actionlib
 import rospy
 from actionlib_msgs.msg import GoalStatus
@@ -12,14 +12,11 @@ from statemachine import State, StateMachine
 from actuator.srv import (
     DestinationMsg,
     DestinationMsgRequest,
-    PermissionMsg,
-    PermissionMsgResponse,
 )
 from actuator.msg import EveryoneStatus
 
-def thread_CV():
+def thread_Master():
     rospy.spin()
-
 
 class SimpleStateMachine(StateMachine):
     def __init__(self, actuator):
@@ -36,8 +33,8 @@ class SimpleStateMachine(StateMachine):
     Rubbish = State("Rubbish")
     # Go是一个事件Event，这个Event是由几个转移Transitions组成
     Go = (
-        Start.to(Start, cond="ReAskMission")
-        |Start.to(Dispense_ABC, cond="GotTarget")
+        Start.to(Dispense_ABC, cond="GotTarget")
+        | Start.to(Start, cond="ReAskMission")
         | Start.to(Wander1, cond="StartWander")
         | Dispense_ABC.to(HandWritten)
         | HandWritten.to(Rubbish,cond="GetRubbish")
@@ -49,100 +46,107 @@ class SimpleStateMachine(StateMachine):
         | Wander2.to(Zero)
     )
 
-    # 以下是条件转移的条件
-    """                seefinished_flag    asksuccess_flag      意义
-    True or False             0                  0              得到识别请求，请求失败，重新请求
-                              0                  1              得到识别请求，请求成功，出现小哥堆积情况，继续配送
-                              1                  0              识别结束，请求失败，本轮小哥处理完，进入wander
-                              1                  1              识别结束，请求成功，常规情况，继续配送
-    """
+    def on_transition(self,state):
+        Slave_status = EveryoneStatus()
+        Slave_status.name = 'Slave'
+        Slave_status.status = state.id
+        self.actuator.location_pub.publish(Slave_status)
+        rospy.logwarn("请求从[%s]转移",state.id)
+        if state.id == 'Start': #在Start时进入转移，代表条件已经允许，可以直接pass
+            pass
+        else:
+            while self.actuator.master_location == state.id :
+                rospy.logwarn("主从状态一致，请等待")
+
 
     def GotTarget(self):
-        if self.actuator.asksuccess_flag:
-            return True
+        """
+            self.actuator.asksuccess_flag == True 请求成功这是第一个大条件
+            发车时，Slave的出发条件是Watcher已经离开配药区（临时停靠点）
+            后续发车，Slave的出发条件为主车离开配药区
+        """
+        if (self.actuator.asksuccess_flag):
+            if self.actuator.watcher_location == 'Temporary':#第一次发车
+                rospy.logwarn("第一次发车")
+                return True
+            elif self.actuator.watcher_location =='Harbour' and self.actuator.master_location == 'Dispense_ABC':
+                rospy.logwarn("从车出发")
+                return True
+            else:
+                return False
         else:
             return False
+
         
+        # if(self.actuator.master_location == 'HandWritten' and self.actuator.asksuccess_flag == True):
+        #     rospy.logwarn("出发！")
+        #     return True
+        # else:
+        #     return False
+
+
+
     def StartWander(self):
-        if (
-            self.actuator.seefinished_flag == True
-            and self.actuator.asksuccess_flag == False and self.actuator.gamestart_flag == True
-        ):
+        if self.actuator.master_location == 'Wander1' :
             rospy.logwarn("进入wander状态")
             return True
         else:
             return False
 
     def ReAskMission(self):
-        if not (self.GotTarget() or self.StartWander()):
-            rospy.sleep(1)
+        if self.actuator.master_location == 'Start' or (not self.GotTarget() and not self.StartWander()): #主车在Start，从车只能reask
             return True
         else:
             return False
 
-        
     def GetRubbish(self):
         if (self.actuator.mission_response.deliver_destination==5):
             rospy.logwarn("丢弃")
             return True
         else:
             return False
-        
-    def before_transition(self,state):
-        Master_status = EveryoneStatus()
-        Master_status.name = 'Master'
-        Master_status.status = state.id
-        self.actuator.location_pub.publish(Master_status)
+
 
 
     def on_enter_Start(self):
-        self.actuator.allow2see_flag = True
-        # rospy.sleep(1)
         self.actuator.actuator_ask_newtarget()
-        while not self.actuator.seefinished_flag : #标志位为False时，代表收到了新请求。
-            if not self.actuator.logwarn_protect:  #False为不保护，第一次log
-                self.actuator.logwarn_protect=True
-                rospy.logwarn("接收到识别器请求，请原地等待")
-        self.actuator.logwarn_protect=False
-
-
-    def on_exit_Start(self):
-        self.actuator.allow2see_flag = False
-
+        rospy.sleep(1)
 
     def on_enter_Dispense_ABC(self):
-        """
-        需要完成的工作：
-        1.向Move_Base发布关于ABC的点
-        2.判断是否到达
-        3.如果到达请上报服务器
-        4.如果没有到达，请阻塞在这里
-        5.如果失败，请取消目标点
-        """
+        rospy.loginfo("前往运动点（配药区）")
+        goal1 = MoveBaseGoal()
+        goal1.target_pose.header.frame_id = "slave/map"
+        goal1.target_pose.header.stamp = rospy.Time.now()
+        goal1.target_pose.pose = point_special_slave[2]
+        if self.actuator.actuator_move(goal1) == True:
+            rospy.loginfo("到达运动点（配药区）")
+        else:
+            rospy.logerr("前往1号运动点失败")
+            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
+
         rospy.loginfo("前往配药区")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose = point_ABC_master[
+        goal.target_pose.pose = point_ABC_slave[
             self.actuator.mission_response.drug_location
         ]
         if self.actuator.actuator_move(goal) == True:
             newABC = self.actuator.responseToABC[
                 self.actuator.mission_response.drug_location
             ]
-            rospy.logwarn("到达配药区%c", newABC)
+            rospy.loginfo("到达配药区%c", newABC)
             self.actuator.actuator_updateABC()
         else:
             rospy.logerr("配药失败")
             self.actuator.move_base_client.cancel_goal()
-#所有都有可能要改成exit，或者调整广播
-    def on_enter_HandWritten(self):
 
+    def on_enter_HandWritten(self):
         rospy.loginfo("前往手写数字识别区")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose = point_special_master[1]
+        goal.target_pose.pose = point_special_slave[1]
         if self.actuator.actuator_move(goal) == True:
             rospy.loginfo("到达手写数字点")
         else:
@@ -150,27 +154,39 @@ class SimpleStateMachine(StateMachine):
             self.actuator.move_base_client.cancel_goal()
 
     def on_enter_Pickup_1234(self):
+
+        rospy.loginfo("前往运动点（取药区）")
+        goal2 = MoveBaseGoal()
+        goal2.target_pose.header.frame_id = "slave/map"
+        goal2.target_pose.header.stamp = rospy.Time.now()
+        goal2.target_pose.pose = point_special_slave[3]
+        if self.actuator.actuator_move(goal2) == True:
+            rospy.loginfo("到达运动点（配药区）")
+        else:
+            rospy.logerr("前往2号运动点失败")
+            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
+
         rospy.loginfo("前往取药区")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose = point_1234_master[
+        goal.target_pose.pose = point_1234_slave[
             self.actuator.mission_response.deliver_destination
         ]
         if self.actuator.actuator_move(goal) == True:
-            rospy.logwarn("到达取药区%d", self.actuator.mission_response.deliver_destination)
+            rospy.loginfo("到达取药区%d", self.actuator.mission_response.deliver_destination)
             self.actuator.actuator_update1234()
 
         else:
             rospy.logerr("取药失败")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
-    
+
     def on_enter_Rubbish(self):
         rospy.logwarn("前往垃圾桶")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose =  point_special_master[3]
+        goal.target_pose.pose =  point_1234_slave[3]
         if self.actuator.actuator_move(goal) == True:
             rospy.loginfo("到达垃圾桶")
             self.actuator.actuator_throwRubbish()
@@ -181,9 +197,9 @@ class SimpleStateMachine(StateMachine):
     def on_enter_Zero(self):
         rospy.loginfo("前往起点")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose = point_special_master[0]
+        goal.target_pose.pose = point_special_slave[0]
         if self.actuator.actuator_move(goal) == True:
             rospy.loginfo("到达起点")
         else:
@@ -193,46 +209,51 @@ class SimpleStateMachine(StateMachine):
     def on_enter_Wander1(self):
         rospy.loginfo("前往运动点（配药区）")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose = point_special_master[2]
+        goal.target_pose.pose = point_special_slave[2]
         if self.actuator.actuator_move(goal) == True:
             rospy.loginfo("到达运动点（配药区）")
         else:
             rospy.logerr("前往1号运动点失败")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
-    def on_enter_Wander2(self):  
-        rospy.loginfo("前往运动点（取药区）")
+    def on_enter_Wander2(self):
+
+        rospy.loginfo("前往手写数字识别区")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose = point_special_master[3]
+        goal.target_pose.pose = point_special_slave[1]
         if self.actuator.actuator_move(goal) == True:
+            rospy.loginfo("到达手写数字点")
+        else:
+            rospy.logerr("手写数字点失败")
+            self.actuator.move_base_client.cancel_goal()
+
+        rospy.loginfo("前往运动点（取药区）")
+        goal2 = MoveBaseGoal()
+        goal2.target_pose.header.frame_id = "slave/map"
+        goal2.target_pose.header.stamp = rospy.Time.now()
+        goal2.target_pose.pose = point_special_slave[3]
+        if self.actuator.actuator_move(goal2) == True:
             rospy.loginfo("到达运动点（配药区）")
 
         else:
             rospy.logerr("前往2号运动点失败")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
-
 class CarActuator(object):
     def __init__(self):
-        rospy.init_node("act_master")
+        rospy.init_node("act_slave")
+        self.location_sub = rospy.Subscriber("/location",EveryoneStatus,self.actuator_deallocation,queue_size=10)
         self.location_pub = rospy.Publisher("/location",EveryoneStatus,queue_size=10)
-
         self.asksuccess_flag = False  # 请求成功标志位
-        self.seefinished_flag = False  # 识别结束标志位
-        self.allow2see_flag = True  # 允许识别标志位,物理上的
-        self.gamestart_flag = False # 游戏开始
-        self.logwarn_protect = False 
+        self.master_location = 'Start' #主车一开始默认为Start
+        self.watcher_location = 'Start' #主车一开始默认为Start
+        self.game_start_flag = False #需要等待观察者从临时停靠点离开
 
         rospy.on_shutdown(self.actuator_shutdown)
-
-        self.permission_server = rospy.Service(
-            "permission", PermissionMsg, self.actuator_dealCV_ask
-        )
-        rospy.loginfo("命令服务器正常启动")
 
         # 订阅move_base服务器的消息
         self.move_base_client = actionlib.SimpleActionClient(
@@ -240,7 +261,7 @@ class CarActuator(object):
         )
         rospy.loginfo("等待连接move_base服务器")
         self.move_base_client.wait_for_server()
-        rospy.loginfo("连上move_base 服务器了")
+        rospy.logwarn("连上move_base 服务器了")
 
         self.mission_client = rospy.ServiceProxy("/mission", DestinationMsg)
         rospy.loginfo("调度器客户端正常启动了")
@@ -252,23 +273,23 @@ class CarActuator(object):
 
         self.responseToABC = {-1: "E", 0: "A", 1: "B", 2: "C"}
 
-        add_thread = threading.Thread(target=thread_CV)
+        add_thread = threading.Thread(target=thread_Master)
         add_thread.start()
-        rospy.loginfo("deal CV thread OK")
+        rospy.loginfo("deal Master thread OK")
 
-    # 程序退出执行
+ # 程序退出执行
     def actuator_shutdown(self):
         rospy.logerr("Stop the robot")
         self.move_base_client.cancel_goal()  # 取消当前目标导航点
 
-    # 向服务器请求新任务,到达起点（标准数字区）
+    # 向服务器请求新任务,到达起点
     def actuator_ask_newtarget(self):
         self.mission_request.request_type = 1  # 请求包编号为“请求新任务”
         self.mission_response = self.mission_client.call(
-            0, self.mission_request.request_type, 0, 0
+            1, self.mission_request.request_type, 0, 0
         )
-        rospy.loginfo("代号:%d,请求新任务", 0)
-        rospy.logerr(
+        rospy.loginfo("代号:%d,请求新任务",1)
+        rospy.loginfo(
             "Get:%c,Send:%d",
             self.responseToABC[self.mission_response.drug_location],
             self.mission_response.deliver_destination,
@@ -278,45 +299,25 @@ class CarActuator(object):
             and self.mission_response.deliver_destination != -1
         ):  # 不是负-1代表请求成功
             self.asksuccess_flag = True  # 请求成功
-            self.gamestart_flag = True #开始游戏
         else:  # 请求失败
             self.asksuccess_flag = False
 
     # 向服务器上报已取药
     def actuator_updateABC(self):
-        playsound("/home/EPRobot/Music/dispense.mp3")
+        playsound("/home/slave/Music/dispense.mp3")
         self.mission_request.request_type = 2  # 请求包编号为“完成配药/ABC”
-        self.mission_client.call(0, self.mission_request.request_type, 0, 0)
+        self.mission_client.call(1, self.mission_request.request_type, 0, 0)
 
     # 向服务器上报已送药
     def actuator_update1234(self):
-        playsound("/home/EPRobot/Music/pick_up.mp3")
+        playsound("/home/slave/Music/pick_up.mp3")
         self.mission_request.request_type = 3  # 请求包编号为“完成送药/1234”
-        self.mission_client.call(0, self.mission_request.request_type, 0, 0)
+        self.mission_client.call(1, self.mission_request.request_type, 0, 0)
 
     def actuator_throwRubbish(self):
-        playsound("/home/EPRobot/Music/throwRubbish.mp3")
+        playsound("/home/slave/Music/throwRubbish.mp3")
         self.mission_request.request_type = 3  # 请求包编号为“完成送药/1234”
         self.mission_client.call(0, self.mission_request.request_type, 0, 0)
-
-    # 处理来自识别器的请求
-    def actuator_dealCV_ask(self, req):
-        if req.request == 0:  # "想看请求"
-            rospy.loginfo("接受:[想看]")
-            self.seefinished_flag = False  # 未看完=想看=接受到想看请求=有新一轮
-            if self.allow2see_flag:  # 已经到达识别区,允许识别
-                self.allow2see_flag = False
-                resp = PermissionMsgResponse(1)  # 可以看
-                rospy.loginfo("回复:[可以]")
-            else:
-                resp = PermissionMsgResponse(0)  # 不可以
-                rospy.loginfo("回复:[拒绝]")
-        else:  # "看完了"
-            rospy.loginfo("接受:[看完]")
-            resp = PermissionMsgResponse(0)
-            self.seefinished_flag = True  # 识别结束=不需要识别
-
-        return resp
 
     def actuator_move(self, goal):
         self.move_base_client.send_goal(goal)
@@ -333,14 +334,20 @@ class CarActuator(object):
                 rospy.logerr("没超时但失败")
                 return False
 
+    def actuator_deallocation(self,msg):
+        if msg.name == 'Master':
+            self.master_location=msg.status
+        elif msg.name == 'Watcher' :
+            self.watcher_location=msg.status
+
+
 
 if __name__ == "__main__":
     try:
-        Master_Car = CarActuator()
-        machine = SimpleStateMachine(Master_Car)
+        Slave_Car = CarActuator()
+        machine = SimpleStateMachine(Slave_Car)
         while not rospy.is_shutdown():
             machine.Go()
-          
     except rospy.ROSInterruptException:
         rospy.logerr("程序意外退出")
         pass
