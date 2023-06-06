@@ -30,13 +30,16 @@ class SimpleStateMachine(StateMachine):
     Zero = State("Zero")
     Wander1 = State("Wander1")
     Wander2 = State("Wander2")
+    Rubbish = State("Rubbish")
     # Go是一个事件Event，这个Event是由几个转移Transitions组成
     Go = (
         Start.to(Dispense_ABC, cond="GotTarget")
         | Start.to(Start, cond="ReAskMission")
         | Start.to(Wander1, cond="StartWander")
         | Dispense_ABC.to(HandWritten)
+        | HandWritten.to(Rubbish,cond="GetRubbish")
         | HandWritten.to(Pickup_1234)
+        | Rubbish.to(Zero)
         | Pickup_1234.to(Zero)
         | Zero.to(Start)
         | Wander1.to(Wander2)
@@ -77,6 +80,14 @@ class SimpleStateMachine(StateMachine):
             return True
         else:
             return False
+        
+    def GetRubbish(self):
+        if (self.actuator.mission_response.deliver_destination==5):
+            rospy.logwarn("丢弃")
+            return True
+        else:
+            return False
+        
 
 
     def on_enter_Start(self):
@@ -150,6 +161,19 @@ class SimpleStateMachine(StateMachine):
 
         else:
             rospy.logerr("取药失败")
+            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
+
+    def on_enter_Rubbish(self):
+        rospy.logwarn("前往垃圾桶")
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose =  point_1234_slave[3]
+        if self.actuator.actuator_move(goal) == True:
+            rospy.loginfo("到达垃圾桶")
+            self.actuator.actuator_throwRubbish()
+        else:
+            rospy.logerr("丢垃圾失败！")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
     def on_enter_Zero(self):
@@ -260,15 +284,20 @@ class CarActuator(object):
 
     # 向服务器上报已取药
     def actuator_updateABC(self):
-        # playsound("/home/EPRobot/Music/dispense.mp3")
+        playsound("/home/slave/Music/dispense.mp3")
         self.mission_request.request_type = 2  # 请求包编号为“完成配药/ABC”
         self.mission_client.call(1, self.mission_request.request_type, 0, 0)
 
     # 向服务器上报已送药
     def actuator_update1234(self):
-        # playsound("/home/EPRobot/Music/pick_up.mp3")
+        playsound("/home/slave/Music/pick_up.mp3")
         self.mission_request.request_type = 3  # 请求包编号为“完成送药/1234”
         self.mission_client.call(1, self.mission_request.request_type, 0, 0)
+
+    def actuator_throwRubbish(self):
+        playsound("/home/slave/Music/throwRubbish.mp3")
+        self.mission_request.request_type = 3  # 请求包编号为“完成送药/1234”
+        self.mission_client.call(0, self.mission_request.request_type, 0, 0)
 
     def actuator_move(self, goal):
         self.move_base_client.send_goal(goal)
