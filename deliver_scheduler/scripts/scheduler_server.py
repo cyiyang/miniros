@@ -4,7 +4,13 @@ import sys
 import threading
 
 import rospy
-from scheduler import NeedToChangeStatus, RequestType, Scheduler, TargetStatus
+from scheduler import (
+    NeedToChangeStatus,
+    RequestType,
+    Scheduler,
+    TargetStatus,
+    CoolingTimePlan,
+)
 from scheduler_ros import SchedulerROS
 from SocketService import SocketServiceMaster
 
@@ -69,6 +75,8 @@ def DrugCoolingTimeHandlerMain():
 if __name__ == "__main__":
     scheduler = SchedulerROS()
     scheduler.RegisterService()
+    scheduler.SetNeedToSeeInterval(60)
+    scheduler.SetDrugCoolingTime(CoolingTimePlan.PERIOD_3)
     scheduler.start()
 
     rospy.loginfo("[scheduler] 调度器就绪!")

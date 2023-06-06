@@ -80,14 +80,14 @@ class SimpleStateMachine(StateMachine):
             return True
         else:
             return False
-        
+
     def GetRubbish(self):
         if (self.actuator.mission_response.deliver_destination==5):
             rospy.logwarn("丢弃")
             return True
         else:
             return False
-        
+
 
 
     def on_enter_Start(self):
@@ -166,7 +166,7 @@ class SimpleStateMachine(StateMachine):
     def on_enter_Rubbish(self):
         rospy.logwarn("前往垃圾桶")
         goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = "map"
+        goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose =  point_1234_slave[3]
         if self.actuator.actuator_move(goal) == True:
