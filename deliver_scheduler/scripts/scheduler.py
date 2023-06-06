@@ -65,8 +65,16 @@ class Scheduler:
             )
             for drugType, interval in self.drugSupplementInterval.items()
         }
+
+        # 目标板提示
+        self.remindInterval = 60 * 3
+        self.reminder = ReloadableTimer(self.remindInterval, True, self.BoardRemind)
+
+    def start(self):
+        """启动药物刷新计时器和目标板提示计时器"""
         for drugType, timer in self.drugSupplementTimers.items():
             timer.start()
+        self.reminder.start()
 
     def GetNextTarget(self, car_id=0):
         """获取下个目标
@@ -273,6 +281,13 @@ class Scheduler:
         """设置药物刷新时间为周期 1, 2 或 3"""
         for drugType, newInterval in self.DRUG_PERIOD[plan].items():
             self.drugSupplementTimers[drugType].restartWithInterval(newInterval)
+
+    def BoardRemind(self):
+        """在目标板更新间隔到达时，会执行该方法"""
+        raise NotImplementedError("请在子类中实现该方法!")
+
+    def SetNeedToSeeInterval(self, newInterval):
+        self.reminder.restartWithInterval(newInterval)
 
 
 @unique
