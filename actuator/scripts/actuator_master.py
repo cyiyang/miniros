@@ -96,15 +96,14 @@ class SimpleStateMachine(StateMachine):
 
 
     def on_enter_Start(self):
-        """
-        需要完成的工作：
-        1.请求新任务
-        2.允许识别器查看图片
-        """
-        self.actuator.actuator_ask_newtarget()
         self.actuator.allow2see_flag = True
+        # rospy.sleep(1)
+        self.actuator.actuator_ask_newtarget()
         while not self.actuator.seefinished_flag : #标志位为False时，代表收到了新请求。
-            rospy.loginfo("接收到识别器请求，请原地等待")
+            if not self.actuator.logwarn_protect:  #False为不保护，第一次log
+                self.actuator.logwarn_protect=True
+                rospy.logwarn("接收到识别器请求，请原地等待")
+        self.actuator.logwarn_protect=False
 
 
     def on_exit_Start(self):
@@ -226,6 +225,7 @@ class CarActuator(object):
         self.seefinished_flag = False  # 识别结束标志位
         self.allow2see_flag = True  # 允许识别标志位,物理上的
         self.gamestart_flag = False # 游戏开始
+        self.logwarn_protect = False 
 
         rospy.on_shutdown(self.actuator_shutdown)
 

@@ -246,12 +246,15 @@ class CharRecognizer:
 
     def ReminderHandler(self, req):
         rospy.loginfo("[recognizer] 收到reminder请求“需要看”: %d" % req.need_to_see)
+        logprotect_flag=False #不保护
         if req.need_to_see:
             can_see = 0  # 默认“不能看”
             while not can_see:
                 can_see = self.actuator_client.call(0).permission  # 向actuator请求“想看”
-                rospy.loginfo("[recognizer] 已向actuator请求“想看”")
-                rospy.sleep(2)
+                if not logprotect_flag:
+                    logprotect_flag=True #只做一次log的保护
+                    rospy.loginfo("[recognizer] 已向actuator请求“想看”")
+                # rospy.sleep(2)
             rospy.loginfo("[recognizer] 收到actuator回复“能看”")
             self.RecognizeHandler()  # “能看”以后开始识别
         return NeedToSeeMsgResponse(True)
