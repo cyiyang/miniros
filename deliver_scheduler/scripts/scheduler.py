@@ -7,13 +7,15 @@ from reloadable_timer import ReloadableTimer
 from statemachine import State, StateMachine
 from statemachine.exceptions import TransitionNotAllowed
 
+LitterStrategy = Enum("DROP_MAX", "DROP_SMALLER_MAX")
+
 
 class Scheduler(object):
     """
     调度器对象
     """
 
-    def __init__(self, DEBUG=False):
+    def __init__(self, DEBUG=False, LitterStrategy=LitterStrategy.DROP_SMALLER_MAX):
         """
         queue中的元素为一字典,具有字段:
         priority: 搬运的优先级，为关于targetType和elapsedTime的函数
@@ -27,6 +29,7 @@ class Scheduler(object):
         self.nextTarget = [None] * self.CAR_CNT
         self.queueLock = threading.RLock()
         self.DEBUG = DEBUG
+        self.litterStrategy = LitterStrategy
 
         # 三种方案下的药物刷新时间
         self.DRUG_PERIOD = {
@@ -69,6 +72,8 @@ class Scheduler(object):
         # 目标板提示
         self.remindInterval = 60 * 3
         self.reminder = ReloadableTimer(self.remindInterval, True, self.BoardRemind)
+
+        # TODO watcher 到达后，等待固定时间来修改小哥周期和药物周期
 
     def start(self):
         """启动药物刷新计时器和目标板提示计时器"""
@@ -113,19 +118,36 @@ class Scheduler(object):
 
             # 没有正常目标时，处理多余的药物
             with self.drugRemainLock:
-                # 获取存量最多的药物的类型和存量
-                mostStockedDrugType, mostStockedDrugAmount = max(
-                    self.drugRemain.items(), key=lambda x: x[1]
-                )
-                if mostStockedDrugAmount < 3:
-                    # 如果存量最多的药物不足3，不需要清理
-                    pass
-                else:
-                    # 将存量药物最多的存量-1
-                    self.__UpdateRemainDrug(mostStockedDrugType, -1)
-                    self.nextTarget[car_id] = self.__dropDrugTarget
-                    self.nextTarget[car_id]["requestType"] = mostStockedDrugType
-                    return self.nextTarget[car_id], TargetStatus.DROP_DRUG.value
+                # * 策略1: 丢弃最多的药物
+                if self.litterStrategy == LitterStrategy.DROP_MAX:
+                    # 获取存量最多的药物的类型和存量
+                    mostStockedDrugType, mostStockedDrugAmount = max(
+                        self.drugRemain.items(), key=lambda x: x[1]
+                    )
+                    if mostStockedDrugAmount < 3:
+                        # 如果存量最多的药物不足3，不需要清理
+                        pass
+                    else:
+                        # 将存量药物最多的存量-1
+                        self.__UpdateRemainDrug(mostStockedDrugType, -1)
+                        self.nextTarget[car_id] = self.__dropDrugTarget
+                        self.nextTarget[car_id]["requestType"] = mostStockedDrugType
+                        return self.nextTarget[car_id], TargetStatus.DROP_DRUG.value
+
+                # * 策略2: 丢弃存货大于等于3的较小者
+                elif self.litterStrategy == LitterStrategy.DROP_SMALLER_MAX:
+                    drugTypeCloserTo3, drugTypeCloserTo3Amount = min(
+                        self.drugRemain.items(),
+                        key=lambda x: x[1] if x[1] >= 3 else float("inf"),
+                    )
+                    if drugTypeCloserTo3Amount == float("inf"):
+                        pass
+                    else:
+                        # 将存量药物最多的存量-1
+                        self.__UpdateRemainDrug(drugTypeCloserTo3, -1)
+                        self.nextTarget[car_id] = self.__dropDrugTarget
+                        self.nextTarget[car_id]["requestType"] = drugTypeCloserTo3
+                        return self.nextTarget[car_id], TargetStatus.DROP_DRUG.value
 
             # 当也没有药物需要清理时，返回无目标
             return self.__noTarget, targetStatus
