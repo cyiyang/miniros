@@ -60,7 +60,7 @@ class SimpleStateMachine(StateMachine):
         return True
 
     def AllowedGo(self):
-        if self.actuator.master_location == "Dispense_ABC":
+        if self.actuator.master_location == "HandWritten":
             return True
         else:
             return False
