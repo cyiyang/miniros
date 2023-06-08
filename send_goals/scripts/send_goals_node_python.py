@@ -15,7 +15,7 @@ def client():
     # 1、订阅move_base服务器的消息
     rospy.init_node("simple_goal", anonymous=True)
     move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
-    move_base.wait_for_server(rospy.Duration(5.0))
+    move_base.wait_for_server()
     rospy.loginfo("Connected to move base server")
 
     test_number = int(sys.argv[1])  # 设定编号
@@ -39,9 +39,9 @@ def client():
         quaternions.append(q)
     
     point_test = list()
-    point_test.append(Pose(Point(1.4, 2.3, 0), quaternions[0]))  # A点
-    point_test.append(Pose(Point(1.28, 2.71, 0), quaternions[1]))  # B点
-    point_test.append(Pose(Point(1.28, 1.80, 0), quaternions[2]))  # C点
+    point_test.append(Pose(Point(2.2, 2.30, 0), quaternions[0]))  # A点
+    point_test.append(Pose(Point(3.08, 2.75, 0), quaternions[1]))  # B点
+    point_test.append(Pose(Point(3.04, 1.82, 0), quaternions[2]))  # C点
 
     point_test.append(Pose(Point(-1.90, 2.10, 0), quaternions[3]))  # 1点
     point_test.append(Pose(Point(-1.03, 1.63, 0), quaternions[4]))  # 2点
@@ -49,7 +49,7 @@ def client():
     point_test.append(Pose(Point(-1.03, 0.68, 0), quaternions[6]))  # 4点
     # 2、目标点内容
     goal = MoveBaseGoal()
-    goal.target_pose.header.frame_id = "map"
+    goal.target_pose.header.frame_id = "slave/map"
     goal.target_pose.header.stamp = rospy.Time.now()
     goal.target_pose.pose = point_test[test_number]
 
@@ -58,7 +58,7 @@ def client():
     move_base.send_goal(goal)
 
     # 4、五分钟时间限制 查看是否成功到达
-    finished_within_time = move_base.wait_for_result(rospy.Duration(300))
+    finished_within_time = move_base.wait_for_result(rospy.Duration(30))
     if not finished_within_time:
         move_base.cancel_goal()
         rospy.loginfo("Timed out achieving goal")

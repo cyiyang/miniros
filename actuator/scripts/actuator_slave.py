@@ -95,16 +95,6 @@ class SimpleStateMachine(StateMachine):
         rospy.sleep(1)
 
     def on_enter_Dispense_ABC(self):
-        rospy.loginfo("前往运动点（配药区）")
-        goal1 = MoveBaseGoal()
-        goal1.target_pose.header.frame_id = "slave/map"
-        goal1.target_pose.header.stamp = rospy.Time.now()
-        goal1.target_pose.pose = point_special_slave[2]
-        if self.actuator.actuator_move(goal1) == True:
-            rospy.loginfo("到达运动点（配药区）")
-        else:
-            rospy.logerr("前往1号运动点失败")
-            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
         rospy.loginfo("前往配药区")
         goal = MoveBaseGoal()
@@ -136,18 +126,6 @@ class SimpleStateMachine(StateMachine):
             self.actuator.move_base_client.cancel_goal()
 
     def on_enter_Pickup_1234(self):
-
-        rospy.loginfo("前往运动点（取药区）")
-        goal2 = MoveBaseGoal()
-        goal2.target_pose.header.frame_id = "slave/map"
-        goal2.target_pose.header.stamp = rospy.Time.now()
-        goal2.target_pose.pose = point_special_slave[3]
-        if self.actuator.actuator_move(goal2) == True:
-            rospy.loginfo("到达运动点（配药区）")
-        else:
-            rospy.logerr("前往2号运动点失败")
-            self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
-
         rospy.loginfo("前往取药区")
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "slave/map"
@@ -168,7 +146,7 @@ class SimpleStateMachine(StateMachine):
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "slave/map"
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose =  point_1234_slave[3]
+        goal.target_pose.pose =  point_special_slave[3]
         if self.actuator.actuator_move(goal) == True:
             rospy.loginfo("到达垃圾桶")
             self.actuator.actuator_throwRubbish()

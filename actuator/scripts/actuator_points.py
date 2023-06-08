@@ -46,22 +46,22 @@ point_special_master = [
 ]  # 运动2点
 
 point_ABC_slave = [
-    Pose(Point(2.639, 2.21, 0), quaternions[0]), 
-    Pose(Point(2.639, 2.21, 0), quaternions[1]),  
-    Pose(Point(2.639, 2.21, 0), quaternions[2]),
+    Pose(Point(2.2,2.30,0), quaternions[0]), 
+    Pose(Point(3.08,2.75,0), quaternions[1]),  
+    Pose(Point(3.04,1.82,0), quaternions[2]),
 ]  # 3
 point_1234_slave = [
     Pose(Point(0, 0, 0), quaternions[3]),  # 无意义
-    Pose(Point(0.38, 1.77, 0), quaternions[4]),    
-    Pose(Point(0.38, 1.77, 0), quaternions[5]),       
-    Pose(Point(0.38, 1.77, 0), quaternions[6]),  
-    Pose(Point(0.38, 1.77, 0), quaternions[7]),
+    Pose(Point(-0.06, 2.26, 0), quaternions[4]),    
+    Pose(Point(0.75, 1.78, 0), quaternions[5]),       
+    Pose(Point(-0.06, 1.30, 0), quaternions[6]),  
+    Pose(Point(0.75, 0.89, 0), quaternions[7]),
 ]  # D
 point_special_slave = [
     Pose(Point(0, 0, 0), quaternions[8]),       # 起点
-    Pose(Point(1.9, 3.7, 0), quaternions[9]),  # 手写数字
+    Pose(Point(1.38, 3.7, 0), quaternions[9]),  # 手写数字
     Pose(Point(2.616, 1.0, 0), quaternions[10]),  #运动1点
-    Pose(Point(0.35, 2.9, 0), quaternions[11]),
+    Pose(Point(0.35, 2.9, 0), quaternions[11]),   #运动2点
 ]  # 运动2点
 
 
