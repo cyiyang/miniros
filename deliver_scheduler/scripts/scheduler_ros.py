@@ -67,6 +67,9 @@ class SchedulerROS(Scheduler):
             if status == TargetStatus.DROP_DRUG.value:
                 rospy.loginfo("[scheduler] 执行药品清理!")
 
+            if status == TargetStatus.DUPLICATE_REQUEST.value:
+                rospy.loginfo("[scheduler] 重复请求,返回上一次任务!")
+
             # 对于当前无目标的情形，schedulerResponse的两个字段均为None, 在这里用-1表示None
             if response.drug_location is None or response.deliver_destination is None:
                 response.drug_location = -1

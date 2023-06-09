@@ -7,7 +7,7 @@ from reloadable_timer import ReloadableTimer
 from statemachine import State, StateMachine
 from statemachine.exceptions import TransitionNotAllowed
 
-LitterStrategy = Enum("LitterStrategy",("DROP_MAX", "DROP_SMALLER_MAX"))
+LitterStrategy = Enum("LitterStrategy", ("DROP_MAX", "DROP_SMALLER_MAX"))
 
 # 1-3 从慢到快
 CoolingTimePlan = Enum("CoolingTimePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
@@ -165,7 +165,7 @@ class Scheduler(object):
 
         else:
             # 小车多次请求目标，返回上一次的目标
-            return self.nextTarget[car_id], TargetStatus.SUCCESS.value
+            return self.nextTarget[car_id], TargetStatus.DUPLICATE_REQUEST.value
 
     def Delivered(self, car_id=0):
         """
@@ -334,7 +334,8 @@ class RequestType(Enum):
 
 
 TargetStatus = Enum(
-    "TargetStatus", ("SUCCESS", "NO_DRUG_REMAIN", "NO_MORE_REQUEST", "DROP_DRUG")
+    "TargetStatus",
+    ("SUCCESS", "NO_DRUG_REMAIN", "NO_MORE_REQUEST", "DROP_DRUG", "DUPLICATE_REQUEST"),
 )
 
 
