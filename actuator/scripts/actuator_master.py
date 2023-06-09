@@ -98,11 +98,11 @@ class SimpleStateMachine(StateMachine):
     def on_enter_Start(self):
         self.actuator.allow2see_flag = True
         # rospy.sleep(1)
-        self.actuator.actuator_ask_newtarget()
         while not self.actuator.seefinished_flag : #标志位为False时，代表收到了新请求。
             if not self.actuator.logwarn_protect:  #False为不保护，第一次log
                 self.actuator.logwarn_protect=True
                 rospy.logwarn("接收到识别器请求，请原地等待")
+        self.actuator.actuator_ask_newtarget()
         self.actuator.logwarn_protect=False
 
 
@@ -320,7 +320,7 @@ class CarActuator(object):
 
     def actuator_move(self, goal):
         self.move_base_client.send_goal(goal)
-        finished_within_time = self.move_base_client.wait_for_result(rospy.Duration(30))
+        finished_within_time = self.move_base_client.wait_for_result(rospy.Duration(15))
         if not finished_within_time:
             self.move_base_client.cancel_goal()
             rospy.logerr("move_base超时")

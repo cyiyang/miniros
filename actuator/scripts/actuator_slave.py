@@ -60,9 +60,12 @@ class SimpleStateMachine(StateMachine):
 
 
     def GotTarget(self):
-        if(self.actuator.master_location == 'HandWritten' and self.actuator.asksuccess_flag == True):
-            rospy.logwarn("出发！")
-            return True
+        if (self.actuator.asksuccess_flag):
+            if self.actuator.watcher_location =='Harbour' and self.actuator.master_location == 'Dispense_ABC':
+                rospy.logwarn("从车出发")
+                return True
+            else:
+                return False
         else:
             return False
 
@@ -210,6 +213,7 @@ class CarActuator(object):
         self.location_pub = rospy.Publisher("/location",EveryoneStatus,queue_size=10)
         self.asksuccess_flag = False  # 请求成功标志位
         self.master_location = 'Start' #主车一开始默认为Start
+        self.watcher_location = 'Start' #主车一开始默认为Start
 
         rospy.on_shutdown(self.actuator_shutdown)
 
@@ -279,7 +283,7 @@ class CarActuator(object):
 
     def actuator_move(self, goal):
         self.move_base_client.send_goal(goal)
-        finished_within_time = self.move_base_client.wait_for_result(rospy.Duration(30))
+        finished_within_time = self.move_base_client.wait_for_result(rospy.Duration(15))
         if not finished_within_time:
             self.move_base_client.cancel_goal()
             rospy.logerr("move_base超时")
@@ -295,7 +299,8 @@ class CarActuator(object):
     def actuator_deallocation(self,msg):
         if msg.name == 'Master':
             self.master_location=msg.status
-        pass
+        elif msg.name == 'Watcher' :
+            self.watcher_location=msg.status
 
 
 

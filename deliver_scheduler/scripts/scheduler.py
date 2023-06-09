@@ -7,7 +7,7 @@ from reloadable_timer import ReloadableTimer
 from statemachine import State, StateMachine
 from statemachine.exceptions import TransitionNotAllowed
 
-LitterStrategy = Enum("DROP_MAX", "DROP_SMALLER_MAX")
+LitterStrategy = Enum("LitterStrategy",("DROP_MAX", "DROP_SMALLER_MAX"))
 
 
 class Scheduler(object):
@@ -15,7 +15,7 @@ class Scheduler(object):
     调度器对象
     """
 
-    def __init__(self, DEBUG=False, LitterStrategy=LitterStrategy.DROP_SMALLER_MAX):
+    def __init__(self, DEBUG=False, LitterStrategy=LitterStrategy.DROP_MAX):
         """
         queue中的元素为一字典,具有字段:
         priority: 搬运的优先级，为关于targetType和elapsedTime的函数

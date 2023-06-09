@@ -16,24 +16,7 @@ def thread_Slave():
 
 
 def Death_Rattle():
-    rospy.logerr("开始清理")
-    os.system("rosnode kill /watcher/amcl")
-    os.system("rosnode kill /watcher/base_control")
-    os.system("rosnode kill /watcher/base_to_camera")
-    os.system("rosnode kill /watcher/base_to_gyro")
-    os.system("rosnode kill /watcher/base_to_laser")
-    os.system("rosnode kill /watcher/base_to_link")
-    os.system("rosnode kill /watcher/ekf_se")
-    os.system("rosnode kill /watcher/joint_state_publisher")
-    os.system("rosnode kill /watcher/laser_filter")
-    os.system("rosnode kill /watcher/ls01d")
-    os.system("rosnode kill /watcher/map_server")
-    os.system("rosnode kill /watcher/joint_state_publisher")
-    os.system("rosnode kill /watcher/laser_filter")
-    os.system("rosnode kill /watcher/move_base")
-    os.system("rosnode kill /watcher/robot_state_publisher")
-    os.system("rosnode kill /watcher/act_watcher")
-    rospy.logerr("全部节点已经清理,开始亡语")
+    rospy.logerr("启动Yolo")
     # 启动 Yolo
     os.system("/home/watcher/digit_recognizer/build/digit_recognizer_demo")
     exit()
@@ -60,6 +43,7 @@ class SimpleStateMachine(StateMachine):
         return True
 
     def AllowedGo(self):
+        #或者这里可以改成ABC
         if self.actuator.master_location == "HandWritten":
             return True
         else:
@@ -95,7 +79,6 @@ class SimpleStateMachine(StateMachine):
             Watcher_status.name = 'Watcher'
             Watcher_status.status = 'Harbour'
             self.actuator.location_pub.publish(Watcher_status)
-            rospy.sleep(2)
             Death_Rattle()
         else:
             rospy.logerr("识别区失败")
@@ -152,7 +135,6 @@ class SendCar2Somewhere(object):
 
     def SendCar2Somewhere_deallocation(self, msg):
         if msg.name == "Master":
-            # rospy.loginfo("Get:%s,%s", msg.name, msg.status)
             self.master_location = msg.status
 
 

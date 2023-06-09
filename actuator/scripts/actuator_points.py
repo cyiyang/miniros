@@ -33,10 +33,10 @@ point_ABC_master = [
 ]  # 3
 point_1234_master = [
     Pose(Point(0, 0, 0), quaternions[3]),  # 无意义
-    Pose(Point(-1.84, 2.26, 0), quaternions[4]),     
-    Pose(Point(-1.03, 1.78, 0), quaternions[5]), 
-    Pose(Point(-1.85, 1.30, 0), quaternions[6]),  
-    Pose(Point(-1.03, 0.89, 0), quaternions[7]),
+    Pose(Point(-1.84, 2.26, 0), quaternions[4]),   #1号  
+    Pose(Point(-1.10, 1.78, 0), quaternions[5]),   #2号
+    Pose(Point(-1.85, 1.30, 0), quaternions[6]),   #3号
+    Pose(Point(-1.10, 0.89, 0), quaternions[7]),   #4号
 ]  # D
 point_special_master = [
     Pose(Point(0, 0, 0), quaternions[8]),  # 起点
