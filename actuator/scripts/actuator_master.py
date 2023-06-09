@@ -295,7 +295,7 @@ class CarActuator(object):
         self.mission_client.call(0, self.mission_request.request_type, 0, 0)
 
     def actuator_throwRubbish(self):
-        playsound("/home/EPRobot/Music/throwRubbish.mp3")
+        # playsound("/home/EPRobot/Music/throwRubbish.mp3")
         self.mission_request.request_type = 3  # 请求包编号为“完成送药/1234”
         self.mission_client.call(0, self.mission_request.request_type, 0, 0)
 

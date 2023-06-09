@@ -12,4 +12,3 @@ oscillation_timeout: 10.0 #执行修复机制前，允许震荡的时长
 oscillation_distance: 0.2 #来回运动在多大距离以上不会认为是震荡
 
 clearing_rotation_allowed: false 
-

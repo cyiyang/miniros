@@ -14,14 +14,6 @@ from actuator.msg import EveryoneStatus
 def thread_Slave():
     rospy.spin()
 
-
-def Death_Rattle():
-    rospy.logerr("启动Yolo")
-    # 启动 Yolo
-    os.system("/home/watcher/digit_recognizer/build/digit_recognizer_demo")
-    exit()
-
-
 class SimpleStateMachine(StateMachine):
     def __init__(self, actuator):
         self.actuator = actuator
@@ -79,7 +71,6 @@ class SimpleStateMachine(StateMachine):
             Watcher_status.name = 'Watcher'
             Watcher_status.status = 'Harbour'
             self.actuator.location_pub.publish(Watcher_status)
-            Death_Rattle()
         else:
             rospy.logerr("识别区失败")
             self.actuator.move_base_client.cancel_goal()

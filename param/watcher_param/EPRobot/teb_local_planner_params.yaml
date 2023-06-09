@@ -17,7 +17,7 @@ TebLocalPlannerROS:
  global_plan_prune_distance: 0.6
  via_points_ordered: False #如果为真，规划器遵循存储容器中通过点的顺序
  # 修改下面这行
- feasibility_check_no_poses: 3  #检测位姿可到达的时间间隔
+ feasibility_check_no_poses: 1  #检测位姿可到达的时间间隔
  exact_arc_length: False
 
  publish_feedback: false
