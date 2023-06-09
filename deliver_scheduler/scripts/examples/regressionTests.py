@@ -15,6 +15,7 @@ from scheduler import Scheduler
 
 if __name__ == "__main__":
     scheduler = Scheduler(DEBUG=True)
+    scheduler.start()
     scheduler.GetNewRequest("A", 1)
     nextTarget, _ = scheduler.GetNextTarget()
     scheduler.DrugLoaded()

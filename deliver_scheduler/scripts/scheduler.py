@@ -9,6 +9,10 @@ from statemachine.exceptions import TransitionNotAllowed
 
 LitterStrategy = Enum("LitterStrategy",("DROP_MAX", "DROP_SMALLER_MAX"))
 
+# 1-3 从慢到快
+CoolingTimePlan = Enum("CoolingTimePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
+NeedToSeePlan = Enum("NeedToSeePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
+
 
 class Scheduler(object):
     """
@@ -36,6 +40,13 @@ class Scheduler(object):
             CoolingTimePlan.PERIOD_1: {"A": 120, "B": 60, "C": 40},
             CoolingTimePlan.PERIOD_2: {"A": 60, "B": 50, "C": 20},
             CoolingTimePlan.PERIOD_3: {"A": 40, "B": 30, "C": 15},
+        }
+
+        # 三种方案下的目标板刷新时间
+        self.NEED_TO_SEE_PERIOD = {
+            NeedToSeePlan.PERIOD_1: 120,
+            NeedToSeePlan.PERIOD_2: 60,
+            NeedToSeePlan.PERIOD_3: 40,
         }
 
         # 起始时三种药各有一瓶
@@ -308,9 +319,10 @@ class Scheduler(object):
         """在目标板更新间隔到达时，会执行该方法"""
         raise NotImplementedError("请在子类中实现该方法!")
 
-    def SetNeedToSeeInterval(self, newInterval):
-        self.remindInterval = newInterval
-        self.reminder.restartWithInterval(newInterval)
+    def SetNeedToSeeInterval(self, plan):
+        newRemindInterval = self.NEED_TO_SEE_PERIOD[plan]
+        self.remindInterval = newRemindInterval
+        self.reminder.restartWithInterval(newRemindInterval)
 
 
 @unique
@@ -329,10 +341,6 @@ TargetStatus = Enum(
 NeedToChangeStatus = Enum(
     "NeedToChangeStatus", ("SPEED_UP", "DONT_CHANGE", "SLOW_DOWN")
 )
-
-CoolingTimePlan = Enum("CoolingTimePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
-
-NeedToSeePlan = Enum("NeedToSeePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
 
 
 class CoolingTime(StateMachine):

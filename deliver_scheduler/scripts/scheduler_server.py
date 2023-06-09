@@ -4,7 +4,7 @@ import sys
 import threading
 
 import rospy
-from scheduler import CoolingTimePlan, NeedToChangeStatus
+from scheduler import CoolingTimePlan, NeedToSeePlan, NeedToChangeStatus
 from scheduler_ros import SchedulerROS
 from SocketService import SocketServiceMaster
 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     scheduler.RegisterService()
     if FIXED_PERIOD:
         rospy.logwarn("scheduler 正在以固定的周期运行!")
-        scheduler.SetNeedToSeeInterval(60)
+        scheduler.SetNeedToSeeInterval(NeedToSeePlan.PERIOD_2)
         scheduler.SetDrugCoolingTime(CoolingTimePlan.PERIOD_3)
     scheduler.start()
 
