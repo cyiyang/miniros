@@ -17,14 +17,14 @@ TebLocalPlannerROS:
  global_plan_prune_distance: 0.6
  via_points_ordered: False #如果为真，规划器遵循存储容器中通过点的顺序
  # 修改下面这行
- feasibility_check_no_poses: 1  #检测位姿可到达的时间间隔
+ feasibility_check_no_poses: 3  #检测位姿可到达的时间间隔
  exact_arc_length: False
 
  publish_feedback: false
 
 
  # Robot 机器人
- max_vel_x: 1.4 #最大x向速度,
+ max_vel_x: 0.85 #最大x向速度,
  max_vel_y: 0.0  #最大y向速度，非全向为0
  max_vel_x_backwards: 0.8 #最大x后退速度
  max_vel_theta: 1.5 # the angular velocity is also bounded by min_turning_radius in case of a carlike robot (r = v / omega)
