@@ -28,6 +28,7 @@ class Scheduler(object):
         elapsedTime: 快递小哥的需求被检测到以来经过的时间
         """
         self.queue = []
+        self.started = False
         self.classWeights = {"A": 20, "B": 15, "C": 10}
         self.CAR_CNT = 2
         self.nextTarget = [None] * self.CAR_CNT
@@ -91,6 +92,7 @@ class Scheduler(object):
         for drugType, timer in self.drugSupplementTimers.items():
             timer.start()
         self.reminder.start()
+        self.started = True
 
     def GetNextTarget(self, car_id=0):
         """获取下个目标
@@ -101,9 +103,16 @@ class Scheduler(object):
             {"requestType": "A", "deliverDestination": 1}
             {"requestType": None, "deliverDestination": None}
         """
+        if not self.started:
+            raise RuntimeError("请先调用start方法")
+
         targetStatus = TargetStatus.SUCCESS.value
 
-        if self.nextTarget[car_id] is None:
+        if (
+            self.nextTarget[car_id] is None
+            or self.nextTarget[car_id]["deliverDestination"] == 5
+        ):
+            # 如果小车当前没有任务，或者当前为其分配了丢垃圾的任务，则为其分配新任务
             with self.queueLock:
                 if self.queue:
                     # 小哥有取药需求时，更新优先级
