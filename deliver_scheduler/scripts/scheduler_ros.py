@@ -152,12 +152,12 @@ class SchedulerROS(Scheduler):
         self.changeDrugCoolingCountDown.start()
         self.changeNeedToSeeCountDown.start()
 
-    def SetNeedToSeeInterval(self, plan):
-        super(SchedulerROS, self).SetNeedToSeeInterval(plan)
+    def UpdateNeedToSeeInterval(self, plan):
+        super(SchedulerROS, self).UpdateNeedToSeeInterval(plan)
         rospy.logerr("已修改为小哥周期2")
         # rospy.logwarn("已修改目标板刷新时间!")
 
-    def SetDrugCoolingTime(self, plan):
-        super(SchedulerROS, self).SetDrugCoolingTime(plan)
+    def UpdateDrugCoolingTime(self, plan):
+        super(SchedulerROS, self).UpdateDrugCoolingTime(plan)
         rospy.logerr("已修改为药品周期3")
         # rospy.logwarn("已修改药物刷新时间!")

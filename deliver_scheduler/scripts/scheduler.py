@@ -2,6 +2,7 @@
 import threading
 import time
 from enum import Enum, unique
+from math import ceil, floor
 
 from reloadable_timer import ReloadableTimer
 from statemachine import State, StateMachine
@@ -91,10 +92,10 @@ class Scheduler(object):
         # TODO watcher 到达后，等待固定时间来修改小哥周期和药物周期
 
         self.changeDrugCoolingCountDown = ReloadableTimer(
-            15, False, self.SetDrugCoolingTime, [CoolingTimePlan.PERIOD_3]
+            15, False, self.UpdateDrugCoolingTime, [CoolingTimePlan.PERIOD_3]
         )
         self.changeNeedToSeeCountDown = ReloadableTimer(
-            30, False, self.SetNeedToSeeInterval, [NeedToSeePlan.PERIOD_2]
+            30, False, self.UpdateNeedToSeeInterval, [NeedToSeePlan.PERIOD_2]
         )
 
     def start(self):
@@ -338,19 +339,25 @@ class Scheduler(object):
         self.__UpdateRemainDrug(self.nextTarget[car_no]["requestType"], 1)
         self.nextTarget[car_no] = None
 
-    def SetDrugCoolingTime(self, plan):
+    def UpdateDrugCoolingTime(self, plan):
         """设置药物刷新时间为周期 1, 2 或 3"""
         for drugType, newInterval in self.DRUG_PERIOD[plan].items():
-            self.drugSupplementTimers[drugType].restartWithInterval(newInterval)
+            self.reminder.setRemainTime(
+                newInterval - floor(self.reminder.getElapsedTime())
+            )
+            self.drugSupplementTimers[drugType].setNewInterval(newInterval)
 
     def BoardRemind(self):
         """在目标板更新间隔到达时，会执行该方法"""
         raise NotImplementedError("请在子类中实现该方法!")
 
-    def SetNeedToSeeInterval(self, plan):
+    def UpdateNeedToSeeInterval(self, plan):
         newRemindInterval = self.NEED_TO_SEE_PERIOD[plan]
         self.remindInterval = newRemindInterval
-        self.reminder.restartWithInterval(newRemindInterval)
+        self.reminder.setRemainTime(
+            newRemindInterval - floor(self.reminder.getElapsedTime())
+        )
+        self.reminder.setNewInterval(newRemindInterval)
 
 
 @unique

@@ -65,8 +65,8 @@ if __name__ == "__main__":
     scheduler.RegisterService()
     if FIXED_PERIOD:
         rospy.logwarn("scheduler 正在以固定的周期运行!")
-        scheduler.SetNeedToSeeInterval(NeedToSeePlan.PERIOD_2)
-        scheduler.SetDrugCoolingTime(CoolingTimePlan.PERIOD_3)
+        scheduler.UpdateNeedToSeeInterval(NeedToSeePlan.PERIOD_2)
+        scheduler.UpdateDrugCoolingTime(CoolingTimePlan.PERIOD_3)
     scheduler.start()
 
     rospy.loginfo("[scheduler] 调度器就绪!")
