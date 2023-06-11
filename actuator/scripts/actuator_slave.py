@@ -61,7 +61,7 @@ class SimpleStateMachine(StateMachine):
 
     def GotTarget(self):
         if (self.actuator.asksuccess_flag):
-            if self.actuator.watcher_location =='Harbour' and self.actuator.master_location == 'Dispense_ABC':
+            if self.actuator.watcher_location =='Harbour' and (self.actuator.master_location == 'Dispense_ABC' or self.actuator.master_location == 'Wander1'):
                 rospy.logwarn("从车出发")
                 return True
             else:
@@ -72,7 +72,7 @@ class SimpleStateMachine(StateMachine):
 
 
     def StartWander(self):
-        if self.actuator.master_location == 'Wander1' :
+        if self.actuator.master_location == 'Wander1' and self.actuator.asksuccess_flag == False :
             rospy.logwarn("进入wander状态")
             return True
         else:
@@ -98,6 +98,9 @@ class SimpleStateMachine(StateMachine):
         rospy.sleep(1)
 
     def on_enter_Dispense_ABC(self):
+
+        while self.actuator.master_location == 'Wander1' :
+            rospy.logwarn("转移保护失效，阻塞")
 
         rospy.loginfo("前往配药区")
         goal = MoveBaseGoal()
@@ -129,6 +132,10 @@ class SimpleStateMachine(StateMachine):
             self.actuator.move_base_client.cancel_goal()
 
     def on_enter_Pickup_1234(self):
+        
+        while self.actuator.master_location == 'Wander2' :
+            rospy.logwarn("转移保护失效，阻塞")
+
         rospy.loginfo("前往取药区")
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "slave/map"
