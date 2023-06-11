@@ -7,7 +7,7 @@ from reloadable_timer import ReloadableTimer
 from statemachine import State, StateMachine
 from statemachine.exceptions import TransitionNotAllowed
 
-LitterStrategy = Enum("LitterStrategy", ("DROP_MAX", "DROP_SMALLER_MAX"))
+LitterStrategy = Enum("LitterStrategy", ("DROP_MAX", "DROP_SMALLER_MAX", "DONT_THROW"))
 
 # 1-3 从慢到快
 CoolingTimePlan = Enum("CoolingTimePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
@@ -16,12 +16,13 @@ NeedToSeePlan = Enum("NeedToSeePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
 # 垃圾场的取药点编号
 LANDFILL_DST = 5
 
+
 class Scheduler(object):
     """
     调度器对象
     """
 
-    def __init__(self, DEBUG=False, LitterStrategy=LitterStrategy.DROP_MAX):
+    def __init__(self, DEBUG=False, LitterStrategy=LitterStrategy.DONT_THROW):
         """
         queue中的元素为一字典,具有字段:
         priority: 搬运的优先级，为关于targetType和elapsedTime的函数
@@ -177,6 +178,10 @@ class Scheduler(object):
                         self.nextTarget[car_id] = self.__dropDrugTarget
                         self.nextTarget[car_id]["requestType"] = drugTypeCloserTo3
                         return self.nextTarget[car_id], TargetStatus.DROP_DRUG.value
+
+                # * 策略3: 开摆
+                elif self.litterStrategy == LitterStrategy.DONT_THROW:
+                    pass
 
             # 当也没有药物需要清理时，返回无目标
             return self.__noTarget, targetStatus
