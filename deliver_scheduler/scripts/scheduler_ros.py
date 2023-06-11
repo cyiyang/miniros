@@ -143,7 +143,7 @@ class SchedulerROS(Scheduler):
         self.BoardRemind()
 
     def BoardRemind(self):
-        rospy.loginfo("[reminder] 去看目标板!")
+        rospy.logwarn("[reminder] 去看目标板!")
         self.boardReminderClient.call(True)
 
     def WatcherArrived(self):

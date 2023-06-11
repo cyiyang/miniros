@@ -99,8 +99,8 @@ class SimpleStateMachine(StateMachine):
 
     def on_enter_Dispense_ABC(self):
 
-        while self.actuator.master_location == 'Wander1' :
-            rospy.logwarn("转移保护失效，阻塞")
+        # while self.actuator.master_location == 'Wander1' :
+        #     rospy.logwarn("转移保护失效，阻塞")
 
         rospy.loginfo("前往配药区")
         goal = MoveBaseGoal()
@@ -132,9 +132,9 @@ class SimpleStateMachine(StateMachine):
             self.actuator.move_base_client.cancel_goal()
 
     def on_enter_Pickup_1234(self):
-        
-        while self.actuator.master_location == 'Wander2' :
-            rospy.logwarn("转移保护失效，阻塞")
+
+        # while self.actuator.master_location == 'Wander2' :
+        #     rospy.logwarn("转移保护失效，阻塞")
 
         rospy.loginfo("前往取药区")
         goal = MoveBaseGoal()
