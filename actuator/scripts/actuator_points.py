@@ -29,14 +29,14 @@ for angle in euler_angles:
 point_ABC_master = [
     Pose(Point(0.42, 2.30, 0), quaternions[0]),  
     Pose(Point(1.30, 2.75, 0), quaternions[1]), 
-    Pose(Point(1.26, 1.82, 0), quaternions[2]),
+    Pose(Point(1.28, 1.78, 0), quaternions[2]),
 ]  # 3
 point_1234_master = [
     Pose(Point(0, 0, 0), quaternions[3]),  # 无意义
     Pose(Point(-1.84, 2.26, 0), quaternions[4]),   #1号  
-    Pose(Point(-1.10, 1.78, 0), quaternions[5]),   #2号
+    Pose(Point(-1.06, 1.78, 0), quaternions[5]),   #2号
     Pose(Point(-1.85, 1.30, 0), quaternions[6]),   #3号
-    Pose(Point(-1.10, 0.89, 0), quaternions[7]),   #4号
+    Pose(Point(-1.06, 0.89, 0), quaternions[7]),   #4号
 ]  # D
 point_special_master = [
     Pose(Point(0, 0, 0), quaternions[8]),  # 起点
@@ -48,14 +48,14 @@ point_special_master = [
 point_ABC_slave = [
     Pose(Point(2.2,2.30,0), quaternions[0]), 
     Pose(Point(3.08,2.75,0), quaternions[1]),  
-    Pose(Point(3.04,1.82,0), quaternions[2]),
+    Pose(Point(3.06,1.78,0), quaternions[2]),
 ]  # 3
 point_1234_slave = [
     Pose(Point(0, 0, 0), quaternions[3]),  # 无意义
     Pose(Point(-0.06, 2.26, 0), quaternions[4]),    
-    Pose(Point(0.75, 1.78, 0), quaternions[5]),       
+    Pose(Point(0.79, 1.78, 0), quaternions[5]),       
     Pose(Point(-0.06, 1.30, 0), quaternions[6]),  
-    Pose(Point(0.75, 0.89, 0), quaternions[7]),
+    Pose(Point(0.79, 0.89, 0), quaternions[7]),
 ]  # D
 point_special_slave = [
     Pose(Point(0, 0, 0), quaternions[8]),       # 起点
