@@ -17,6 +17,7 @@ from actuator.srv import (
 )
 from actuator.msg import EveryoneStatus
 
+
 def thread_CV():
     rospy.spin()
 
@@ -37,10 +38,10 @@ class SimpleStateMachine(StateMachine):
     # Go是一个事件Event，这个Event是由几个转移Transitions组成
     Go = (
         Start.to(Start, cond="ReAskMission")
-        |Start.to(Dispense_ABC, cond="GotTarget")
+        | Start.to(Dispense_ABC, cond="GotTarget")
         | Start.to(Wander1, cond="StartWander")
         | Dispense_ABC.to(HandWritten)
-        | HandWritten.to(Rubbish,cond="GetRubbish")
+        | HandWritten.to(Rubbish, cond="GetRubbish")
         | HandWritten.to(Pickup_1234)
         | Rubbish.to(Zero)
         | Pickup_1234.to(Zero)
@@ -62,11 +63,12 @@ class SimpleStateMachine(StateMachine):
             return True
         else:
             return False
-        
+
     def StartWander(self):
         if (
             self.actuator.seefinished_flag == True
-            and self.actuator.asksuccess_flag == False and self.actuator.gamestart_flag == True
+            and self.actuator.asksuccess_flag == False
+            and self.actuator.gamestart_flag == True
         ):
             rospy.logwarn("进入wander状态")
             return True
@@ -80,35 +82,33 @@ class SimpleStateMachine(StateMachine):
         else:
             return False
 
-        
     def GetRubbish(self):
-        if (self.actuator.mission_response.deliver_destination==5):
+        if self.actuator.mission_response.deliver_destination == 5:
             rospy.logwarn("丢弃")
             return True
         else:
             return False
-        
-    def before_transition(self,state):
+
+    def before_transition(self, state):
         Master_status = EveryoneStatus()
-        Master_status.name = 'Master'
+        Master_status.name = "Master"
         Master_status.status = state.id
         self.actuator.location_pub.publish(Master_status)
-
 
     def on_enter_Start(self):
         self.actuator.allow2see_flag = True
         # rospy.sleep(1)
-        while not self.actuator.seefinished_flag : #标志位为False时，代表收到了新请求。
-            if not self.actuator.logwarn_protect:  #False为不保护，第一次log
-                self.actuator.logwarn_protect=True
+        while not self.actuator.seefinished_flag:  # 标志位为False时，代表收到了新请求。
+            if not self.actuator.logwarn_protect:  # False为不保护，第一次log
+                self.actuator.logwarn_protect = True
                 rospy.logwarn("接收到识别器请求，请原地等待")
+        # 睡眠0.5s等待需求更新
+        rospy.sleep(0.5)
         self.actuator.actuator_ask_newtarget()
-        self.actuator.logwarn_protect=False
-
+        self.actuator.logwarn_protect = False
 
     def on_exit_Start(self):
         self.actuator.allow2see_flag = False
-
 
     def on_enter_Dispense_ABC(self):
         """
@@ -135,9 +135,9 @@ class SimpleStateMachine(StateMachine):
         else:
             rospy.logerr("配药失败")
             self.actuator.move_base_client.cancel_goal()
-#所有都有可能要改成exit，或者调整广播
-    def on_enter_HandWritten(self):
 
+    # 所有都有可能要改成exit，或者调整广播
+    def on_enter_HandWritten(self):
         rospy.loginfo("前往手写数字识别区")
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "map"
@@ -164,13 +164,13 @@ class SimpleStateMachine(StateMachine):
         else:
             rospy.logerr("取药失败")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
-    
+
     def on_enter_Rubbish(self):
         rospy.logwarn("前往垃圾桶")
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "map"
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose =  point_special_master[3]
+        goal.target_pose.pose = point_special_master[3]
         if self.actuator.actuator_move(goal) == True:
             rospy.loginfo("到达垃圾桶")
             self.actuator.actuator_throwRubbish()
@@ -202,7 +202,7 @@ class SimpleStateMachine(StateMachine):
             rospy.logerr("前往1号运动点失败")
             self.actuator.move_base_client.cancel_goal()  # 取消当前目标导航点
 
-    def on_enter_Wander2(self):  
+    def on_enter_Wander2(self):
         rospy.loginfo("前往运动点（取药区）")
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = "map"
@@ -219,13 +219,13 @@ class SimpleStateMachine(StateMachine):
 class CarActuator(object):
     def __init__(self):
         rospy.init_node("act_master")
-        self.location_pub = rospy.Publisher("/location",EveryoneStatus,queue_size=10)
+        self.location_pub = rospy.Publisher("/location", EveryoneStatus, queue_size=10)
 
         self.asksuccess_flag = False  # 请求成功标志位
         self.seefinished_flag = False  # 识别结束标志位
         self.allow2see_flag = True  # 允许识别标志位,物理上的
-        self.gamestart_flag = False # 游戏开始
-        self.logwarn_protect = False 
+        self.gamestart_flag = False  # 游戏开始
+        self.logwarn_protect = False
 
         rospy.on_shutdown(self.actuator_shutdown)
 
@@ -278,7 +278,7 @@ class CarActuator(object):
             and self.mission_response.deliver_destination != -1
         ):  # 不是负-1代表请求成功
             self.asksuccess_flag = True  # 请求成功
-            self.gamestart_flag = True #开始游戏
+            self.gamestart_flag = True  # 开始游戏
         else:  # 请求失败
             self.asksuccess_flag = False
 
@@ -340,7 +340,7 @@ if __name__ == "__main__":
         machine = SimpleStateMachine(Master_Car)
         while not rospy.is_shutdown():
             machine.Go()
-          
+
     except rospy.ROSInterruptException:
         rospy.logerr("程序意外退出")
         pass

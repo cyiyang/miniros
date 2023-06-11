@@ -17,7 +17,7 @@ DEBUG = 0
 SLAVE_ADDR = "192.168.137.172"
 SLAVE_PORT = 12345
 SLAVE_READY_PORT = 11515
-FIXED_PERIOD = True
+FIXED_PERIOD = False
 
 
 def SchedulerServerMain():
@@ -70,9 +70,5 @@ if __name__ == "__main__":
     scheduler.start()
 
     rospy.loginfo("[scheduler] 调度器就绪!")
-
-    drugCoolingTimeHandlerThread = threading.Thread(target=DrugCoolingTimeHandlerMain)
-    drugCoolingTimeHandlerThread.setDaemon(True)
-    # drugCoolingTimeHandlerThread.start()
 
     SchedulerServerMain()

@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
+import threading
+
 import rospy
 from scheduler import NeedToChangeStatus, RequestType, Scheduler, TargetStatus
 
-from deliver_scheduler.srv import (
-    ChangeTimeResult,
-    ChangeTimeResultResponse,
-    DestinationMsg,
-    DestinationMsgResponse,
-    NeedToSeeMsg,
-    NeedToSeeMsgResponse,
-)
+from deliver_scheduler.msg import EveryoneStatus
+from deliver_scheduler.srv import (ChangeTimeResult, ChangeTimeResultResponse,
+                                   DestinationMsg, DestinationMsgResponse,
+                                   NeedToSeeMsg, NeedToSeeMsgResponse)
 
 emptyResponse = DestinationMsgResponse()
 emptyResponse.drug_location = -1
@@ -105,15 +103,59 @@ class SchedulerROS(Scheduler):
         rospy.loginfo("[reminder] reminder_client正常启动")
         self.boardReminderClient.wait_for_service()
         rospy.loginfo("[reminder] 连接recognizer_server成功")
+
+        self.watcherListenerThread = threading.Thread(target=self.WatcherStatusListener)
+        self.watcherListenerThread.setDaemon(True)
+        self.watcherListenerThread.start()
         return True
+
+    def WatcherStatusListener(self):
+        """订阅话题，并阻塞地等待Watcher到达手写数字点"""
+
+        def CheckTopic(msg):
+            if msg.name != "Watcher":
+                return
+            elif msg.status == "Harbour":
+                self.WatcherArrived()
+
+        rospy.loginfo("成功订阅/location话题")
+
+        topicSubscriber = rospy.Subscriber(
+            "/location",
+            EveryoneStatus,
+            CheckTopic,
+            queue_size=10,
+        )
+
+        rospy.spin()
 
     def start(self):
         # 启动计时器
         super(SchedulerROS, self).start()
 
+        # 启动监听 watcher 状态线程
+        watcherStatusListenerThread = threading.Thread(
+            target=self.WatcherStatusListener
+        )
+        watcherStatusListenerThread.setDaemon(True)
+        watcherStatusListenerThread.start()
         # 执行初始识别任务
         self.BoardRemind()
 
     def BoardRemind(self):
         rospy.loginfo("[reminder] 去看目标板!")
         self.boardReminderClient.call(True)
+
+    def WatcherArrived(self):
+        """当 watcher 到达时，调用该方法，在固定时间后调整药物刷新时间和小哥刷新时间"""
+        rospy.loginfo("Watcher到达手写数字点,将在定时时间到达后修改药物刷新时间和小哥刷新时间!")
+        self.changeDrugCoolingCountDown.start()
+        self.changeNeedToSeeCountDown.start()
+
+    def SetNeedToSeeInterval(self, plan):
+        super(SchedulerROS, self).SetNeedToSeeInterval(plan)
+        rospy.logwarn("已修改目标板刷新时间!")
+
+    def SetDrugCoolingTime(self, plan):
+        super(SchedulerROS, self).SetDrugCoolingTime(plan)
+        rospy.logwarn("已修改药物刷新时间!")

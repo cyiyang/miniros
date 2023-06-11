@@ -71,6 +71,7 @@ class SimpleStateMachine(StateMachine):
             Watcher_status.name = 'Watcher'
             Watcher_status.status = 'Harbour'
             self.actuator.location_pub.publish(Watcher_status)
+            rospy.signal_shutdown('任务完成,即将退出...')
         else:
             rospy.logerr("识别区失败")
             self.actuator.move_base_client.cancel_goal()

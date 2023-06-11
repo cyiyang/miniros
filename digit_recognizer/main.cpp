@@ -25,11 +25,14 @@
 #endif
 #include <float.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <vector>
 
 #define YOLOX_NMS_THRESH 0.45  // nms threshold
 #define YOLOX_CONF_THRESH 0.75 // threshold of bounding box prob
 #define YOLOX_TARGET_SIZE 640  // target image size after resize, might use 416 for small model
+
+#define display_result false
 
 // YOLOX use the same focus in yolov5
 class YoloV5Focus : public ncnn::Layer
@@ -383,7 +386,6 @@ bool compareByX(const Object &obj1, const Object &obj2)
 int main(int argc, char **argv)
 {
     bool use_camera = true;
-    bool display_result = false;
     cv::Mat m;
     cv::VideoCapture cap(0); // 打开默认摄像头
     static const char *class_names[] = {
@@ -434,6 +436,10 @@ int main(int argc, char **argv)
         exit(-1);
     if (yolox.load_model("yolox.bin"))
         exit(-1);
+
+    fprintf(stderr, "模型加载成功!\n");
+
+    sleep(30);
 
     do
     {

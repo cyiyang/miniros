@@ -13,6 +13,8 @@ LitterStrategy = Enum("LitterStrategy", ("DROP_MAX", "DROP_SMALLER_MAX"))
 CoolingTimePlan = Enum("CoolingTimePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
 NeedToSeePlan = Enum("NeedToSeePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
 
+# 垃圾场的取药点编号
+LANDFILL_DST = 5
 
 class Scheduler(object):
     """
@@ -68,7 +70,7 @@ class Scheduler(object):
 
         self.__dropDrugTarget = {
             "requestType": "C",
-            "deliverDestination": 5,
+            "deliverDestination": LANDFILL_DST,
         }
 
         self.coolingTimeStateMachine = CoolingTime()
@@ -86,6 +88,13 @@ class Scheduler(object):
         self.reminder = ReloadableTimer(self.remindInterval, True, self.BoardRemind)
 
         # TODO watcher 到达后，等待固定时间来修改小哥周期和药物周期
+
+        self.changeDrugCoolingCountDown = ReloadableTimer(
+            15, False, self.SetDrugCoolingTime, [CoolingTimePlan.PERIOD_3]
+        )
+        self.changeNeedToSeeCountDown = ReloadableTimer(
+            30, False, self.SetNeedToSeeInterval, [NeedToSeePlan.PERIOD_2]
+        )
 
     def start(self):
         """启动药物刷新计时器和目标板提示计时器"""
@@ -317,7 +326,12 @@ class Scheduler(object):
                 timer.setNewInterval(timer.getReloadInterval() * (1 + 0.5))
 
     def ForgiveCurrentTask(self, car_no):
-        return
+        """放弃小车当前的任务，返回之前取的药物到库存中"""
+        if self.nextTarget[car_no] is None:
+            return
+        # 返回之前取走的药物
+        self.__UpdateRemainDrug(self.nextTarget[car_no]["requestType"], 1)
+        self.nextTarget[car_no] = None
 
     def SetDrugCoolingTime(self, plan):
         """设置药物刷新时间为周期 1, 2 或 3"""
