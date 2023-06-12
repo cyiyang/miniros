@@ -134,11 +134,7 @@ class SchedulerROS(Scheduler):
         super(SchedulerROS, self).start()
 
         # 启动监听 watcher 状态线程
-        watcherStatusListenerThread = threading.Thread(
-            target=self.WatcherStatusListener
-        )
-        watcherStatusListenerThread.setDaemon(True)
-        watcherStatusListenerThread.start()
+        # watcherStatusListenerThread 在 RegisterService 中启动，此处无需处理
         # 执行初始识别任务
         self.BoardRemind()
 
@@ -153,11 +149,11 @@ class SchedulerROS(Scheduler):
         self.changeNeedToSeeCountDown.start()
 
     def UpdateNeedToSeeInterval(self, plan):
+        rospy.logerr("修改为小哥周期2")
         super(SchedulerROS, self).UpdateNeedToSeeInterval(plan)
-        rospy.logerr("已修改为小哥周期2")
         # rospy.logwarn("已修改目标板刷新时间!")
 
     def UpdateDrugCoolingTime(self, plan):
+        rospy.logerr("修改为药品周期3")
         super(SchedulerROS, self).UpdateDrugCoolingTime(plan)
-        rospy.logerr("已修改为药品周期3")
         # rospy.logwarn("已修改药物刷新时间!")
