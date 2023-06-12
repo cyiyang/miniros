@@ -30,7 +30,9 @@ class ReloadableTimer(object):
     def _run(self):
         self.running = False
         self.startTime = None
-        threading.Thread(target=self.function(*self.args, **self.kwargs)).start()
+        threading.Thread(
+            target=self.function, args=self.args, kwargs=self.kwargs
+        ).start()
         if self.autoReload:
             # 自动重载会以 self.reloadInterval 指定的间隔进行
             self.restart(self.reloadInterval)
@@ -72,6 +74,9 @@ class ReloadableTimer(object):
 
     def setRemainTime(self, remainTime):
         """临时修改定时器的剩余时间，本轮定时器超时后，将按原有的周期继续运行"""
+        if remainTime <= 0:
+            self._run()
+            return
         self.restart(remainTime)
 
     def setNewInterval(self, newInterval):
