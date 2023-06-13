@@ -2,12 +2,18 @@
 import threading
 
 import rospy
+from playsound import playsound
 from scheduler import NeedToChangeStatus, RequestType, Scheduler, TargetStatus
 
 from deliver_scheduler.msg import EveryoneStatus
-from deliver_scheduler.srv import (ChangeTimeResult, ChangeTimeResultResponse,
-                                   DestinationMsg, DestinationMsgResponse,
-                                   NeedToSeeMsg, NeedToSeeMsgResponse)
+from deliver_scheduler.srv import (
+    ChangeTimeResult,
+    ChangeTimeResultResponse,
+    DestinationMsg,
+    DestinationMsgResponse,
+    NeedToSeeMsg,
+    NeedToSeeMsgResponse,
+)
 
 emptyResponse = DestinationMsgResponse()
 emptyResponse.drug_location = -1
@@ -150,10 +156,12 @@ class SchedulerROS(Scheduler):
 
     def UpdateNeedToSeeInterval(self, plan):
         rospy.logerr("修改为小哥周期2")
+        playsound("/home/EPRobot/Music/DeliverPeriod2.mp3", block=False)
         super(SchedulerROS, self).UpdateNeedToSeeInterval(plan)
         # rospy.logwarn("已修改目标板刷新时间!")
 
     def UpdateDrugCoolingTime(self, plan):
         rospy.logerr("修改为药品周期3")
+        playsound("/home/EPRobot/Music/DrugPeriod3.mp3", block=False)
         super(SchedulerROS, self).UpdateDrugCoolingTime(plan)
         # rospy.logwarn("已修改药物刷新时间!")

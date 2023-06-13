@@ -13,16 +13,17 @@ roslaunch robot_navigation navigation_rviz.launch
 rosrun rqt_graph rqt_graph
 # 需要启动的功能包(Master)
  * roslaunch robot_navigation robot_navigation.launch
- * roslaunch actuator car_master.launch 
+ * roslaunch actuator car_master.launch
  * roslaunch char_recognizer char_recognizer.launch         # 真图
  * roslaunch char_recognizer char_recognizer_fake.launch    # 假图
  * roslaunch deliver_scheduler scheduler.launch
 # 需要启动的功能包（Slave）
  * roslaunch robot_navigation robot_navigation.launch
- * roslaunch actuator car_slave.launch 
+ * roslaunch actuator car_slave.launch
 # 需要启动的功能包(Watcher)
  * roslaunch robot_navigation robot_navigation.launch
- * roslaunch actuator car_watcher.launch 
+ * ./launch_watcher.bash (会依次启动下面的 `launch` 和 YoloX)
+ * roslaunch actuator car_watcher.launch
 
 # usb-cam使用注意
 出现[image_view-3] process has died [pid 22787, exit code -11, cmd /opt/ros/melodic/lib/image_view/image_view image:=/usb_cam/image_raw __name:=image_view __log:=/home/EPRobot/.ros/log/8cd2c622-0464-11ee-9185-000c29f076f7/image_view-3.log].

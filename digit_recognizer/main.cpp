@@ -33,6 +33,7 @@
 #define YOLOX_TARGET_SIZE 640  // target image size after resize, might use 416 for small model
 
 #define display_result false
+#define sleep_at_start false
 
 // YOLOX use the same focus in yolov5
 class YoloV5Focus : public ncnn::Layer
@@ -439,7 +440,10 @@ int main(int argc, char **argv)
 
     fprintf(stderr, "模型加载成功!\n");
 
-    sleep(30);
+    if (sleep_at_start)
+    {
+        sleep(30);
+    }
 
     do
     {
