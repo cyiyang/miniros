@@ -60,6 +60,8 @@ class SimpleStateMachine(StateMachine):
 
     def GotTarget(self):
         if self.actuator.asksuccess_flag:
+            while not self.actuator.seefinished_flag:
+                rospy.loginfo("虽然请求成功，但要识别，阻塞中")
             return True
         else:
             return False

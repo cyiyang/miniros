@@ -2,12 +2,13 @@
 import threading
 import time
 from enum import Enum, unique
+from math import ceil, floor
 
 from reloadable_timer import ReloadableTimer
 from statemachine import State, StateMachine
 from statemachine.exceptions import TransitionNotAllowed
 
-LitterStrategy = Enum("LitterStrategy", ("DROP_MAX", "DROP_SMALLER_MAX"))
+LitterStrategy = Enum("LitterStrategy", ("DROP_MAX", "DROP_SMALLER_MAX", "DONT_THROW"))
 
 # 1-3 从慢到快
 CoolingTimePlan = Enum("CoolingTimePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
@@ -16,12 +17,18 @@ NeedToSeePlan = Enum("NeedToSeePlan", ("PERIOD_1", "PERIOD_2", "PERIOD_3"))
 # 垃圾场的取药点编号
 LANDFILL_DST = 5
 
+
 class Scheduler(object):
     """
     调度器对象
     """
 
-    def __init__(self, DEBUG=False, LitterStrategy=LitterStrategy.DROP_MAX):
+    def __init__(
+        self,
+        DEBUG=False,
+        remindInterval=60 * 3,
+        LitterStrategy=LitterStrategy.DONT_THROW,
+    ):
         """
         queue中的元素为一字典,具有字段:
         priority: 搬运的优先级，为关于targetType和elapsedTime的函数
@@ -84,16 +91,16 @@ class Scheduler(object):
         }
 
         # 目标板提示
-        self.remindInterval = 60 * 3
+        self.remindInterval = remindInterval
         self.reminder = ReloadableTimer(self.remindInterval, True, self.BoardRemind)
 
         # TODO watcher 到达后，等待固定时间来修改小哥周期和药物周期
 
         self.changeDrugCoolingCountDown = ReloadableTimer(
-            15, False, self.SetDrugCoolingTime, [CoolingTimePlan.PERIOD_3]
+            15, False, self.UpdateDrugCoolingTime, [CoolingTimePlan.PERIOD_3]
         )
         self.changeNeedToSeeCountDown = ReloadableTimer(
-            30, False, self.SetNeedToSeeInterval, [NeedToSeePlan.PERIOD_2]
+            30, False, self.UpdateNeedToSeeInterval, [NeedToSeePlan.PERIOD_2]
         )
 
     def start(self):
@@ -177,6 +184,10 @@ class Scheduler(object):
                         self.nextTarget[car_id] = self.__dropDrugTarget
                         self.nextTarget[car_id]["requestType"] = drugTypeCloserTo3
                         return self.nextTarget[car_id], TargetStatus.DROP_DRUG.value
+
+                # * 策略3: 开摆
+                elif self.litterStrategy == LitterStrategy.DONT_THROW:
+                    pass
 
             # 当也没有药物需要清理时，返回无目标
             return self.__noTarget, targetStatus
@@ -293,38 +304,6 @@ class Scheduler(object):
         else:
             return NeedToChangeStatus.DONT_CHANGE.value
 
-    def UpdateDrugCoolingTime(self, needToChangeStatus):
-        """在正确识别手写数字后，更新药物的刷新时间
-        @needToChangeStatus: 修改刷新时间的方向，可以为 DONT_CHANGE, SPEED_UP, SLOW_DOWN (.value)
-        @return: True, 当转换成功; False, 当转换失败
-        """
-        if needToChangeStatus == NeedToChangeStatus.DONT_CHANGE.value:
-            return True
-        if needToChangeStatus == NeedToChangeStatus.SPEED_UP.value:
-            try:
-                self.coolingTimeStateMachine.send("SPEED_UP")
-            except TransitionNotAllowed:
-                if not self.DEBUG:
-                    print("不允许的状态转换!")
-                else:
-                    # 避免程序直接退出
-                    raise ValueError("不允许的状态转换!")
-                return False
-            for timer in self.drugSupplementTimers:
-                # 在当前的基础上以 50% 的比率提高或降低三个配药窗口的配送周期，即变为原时间的 1 - 0.5 = 0.5 倍
-                timer.setRemainTime(timer.getRemainTime() / 2.0)
-                timer.setNewInterval(timer.getReloadInterval() / 2.0)
-        elif needToChangeStatus == NeedToChangeStatus.SLOW_DOWN.value:
-            try:
-                self.coolingTimeStateMachine.send("SLOW_DOWN")
-            except TransitionNotAllowed:
-                print("不允许的状态转换!")
-                return False
-            for timer in self.drugSupplementTimers:
-                # 在当前的基础上以 50% 的比率提高或降低三个配药窗口的配送周期，即提升至原时间的 1 + 0.5 = 1.5 倍
-                timer.setRemainTime(timer.getRemainTime() * (1 + 0.5))
-                timer.setNewInterval(timer.getReloadInterval() * (1 + 0.5))
-
     def ForgiveCurrentTask(self, car_no):
         """放弃小车当前的任务，返回之前取的药物到库存中"""
         if self.nextTarget[car_no] is None:
@@ -333,19 +312,26 @@ class Scheduler(object):
         self.__UpdateRemainDrug(self.nextTarget[car_no]["requestType"], 1)
         self.nextTarget[car_no] = None
 
-    def SetDrugCoolingTime(self, plan):
+    def UpdateDrugCoolingTime(self, plan):
         """设置药物刷新时间为周期 1, 2 或 3"""
         for drugType, newInterval in self.DRUG_PERIOD[plan].items():
-            self.drugSupplementTimers[drugType].restartWithInterval(newInterval)
+            self.drugSupplementTimers[drugType].setNewInterval(newInterval)
+            self.drugSupplementTimers[drugType].setRemainTime(
+                newInterval
+                - floor(self.drugSupplementTimers[drugType].getElapsedTime())
+            )
 
     def BoardRemind(self):
         """在目标板更新间隔到达时，会执行该方法"""
         raise NotImplementedError("请在子类中实现该方法!")
 
-    def SetNeedToSeeInterval(self, plan):
+    def UpdateNeedToSeeInterval(self, plan):
         newRemindInterval = self.NEED_TO_SEE_PERIOD[plan]
         self.remindInterval = newRemindInterval
-        self.reminder.restartWithInterval(newRemindInterval)
+        self.reminder.setNewInterval(newRemindInterval)
+        self.reminder.setRemainTime(
+            max([newRemindInterval - floor(self.reminder.getElapsedTime()), 1])
+        )
 
 
 @unique

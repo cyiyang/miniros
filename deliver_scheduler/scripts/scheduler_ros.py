@@ -2,12 +2,18 @@
 import threading
 
 import rospy
+from playsound import playsound
 from scheduler import NeedToChangeStatus, RequestType, Scheduler, TargetStatus
 
 from deliver_scheduler.msg import EveryoneStatus
-from deliver_scheduler.srv import (ChangeTimeResult, ChangeTimeResultResponse,
-                                   DestinationMsg, DestinationMsgResponse,
-                                   NeedToSeeMsg, NeedToSeeMsgResponse)
+from deliver_scheduler.srv import (
+    ChangeTimeResult,
+    ChangeTimeResultResponse,
+    DestinationMsg,
+    DestinationMsgResponse,
+    NeedToSeeMsg,
+    NeedToSeeMsgResponse,
+)
 
 emptyResponse = DestinationMsgResponse()
 emptyResponse.drug_location = -1
@@ -134,16 +140,12 @@ class SchedulerROS(Scheduler):
         super(SchedulerROS, self).start()
 
         # 启动监听 watcher 状态线程
-        watcherStatusListenerThread = threading.Thread(
-            target=self.WatcherStatusListener
-        )
-        watcherStatusListenerThread.setDaemon(True)
-        watcherStatusListenerThread.start()
+        # watcherStatusListenerThread 在 RegisterService 中启动，此处无需处理
         # 执行初始识别任务
         self.BoardRemind()
 
     def BoardRemind(self):
-        rospy.loginfo("[reminder] 去看目标板!")
+        rospy.logwarn("[reminder] 去看目标板!")
         self.boardReminderClient.call(True)
 
     def WatcherArrived(self):
@@ -152,12 +154,14 @@ class SchedulerROS(Scheduler):
         self.changeDrugCoolingCountDown.start()
         self.changeNeedToSeeCountDown.start()
 
-    def SetNeedToSeeInterval(self, plan):
-        super(SchedulerROS, self).SetNeedToSeeInterval(plan)
-        rospy.logerr("已修改为小哥周期2")
+    def UpdateNeedToSeeInterval(self, plan):
+        rospy.logerr("修改为小哥周期2")
+        playsound("/home/EPRobot/Music/DeliverPeriod2.mp3", block=False)
+        super(SchedulerROS, self).UpdateNeedToSeeInterval(plan)
         # rospy.logwarn("已修改目标板刷新时间!")
 
-    def SetDrugCoolingTime(self, plan):
-        super(SchedulerROS, self).SetDrugCoolingTime(plan)
-        rospy.logerr("已修改为药品周期3")
+    def UpdateDrugCoolingTime(self, plan):
+        rospy.logerr("修改为药品周期3")
+        playsound("/home/EPRobot/Music/DrugPeriod3.mp3", block=False)
+        super(SchedulerROS, self).UpdateDrugCoolingTime(plan)
         # rospy.logwarn("已修改药物刷新时间!")
