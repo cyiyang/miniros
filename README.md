@@ -39,5 +39,11 @@ ROS 破车的代码仓库
 * ROS 栅格地图坐标系为 $x$ 右 $y$ 上。
 
 ## 完美收官捏
-以下为国赛最终成绩![这是国赛截图](/picture/final.png "国赛截图捏")  
-击败哈工深（狗头），捧杯力[这是国赛公示截图](/picture/first_prize.png "捏") 
+
+以下为国赛最终成绩
+
+![这是国赛截图](/picture/final.png "国赛截图捏")
+
+击败哈工深（狗头），捧杯力
+
+![这是国赛公示截图](/picture/first_prize.png "捏") 
