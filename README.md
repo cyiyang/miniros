@@ -18,6 +18,7 @@ ROS 破车的代码仓库
 
 ## 需要启动的功能包 (Master)
  * `roslaunch robot_navigation robot_navigation.launch`
+ * `roslaunch astra_camera astra.launch    #使用原始的摄像头运行厂家节点
  * `roslaunch actuator car_master.launch `
  * `roslaunch char_recognizer char_recognizer.launch`         # 真图
  * `roslaunch char_recognizer char_recognizer_fake.launch`    # 假图
